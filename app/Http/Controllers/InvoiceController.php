@@ -14,7 +14,7 @@ class InvoiceController extends Controller
     public function index(Request $request)
     {
         $invoices = Invoice::with('client', 'creator')
-            ->when($request->search, fn($q, $s) => $q->where('invoice_number', 'like', "%{$s}%"))
+            ->when($request->search, fn($q, $s) => $q->where(fn($wq) => $wq->where('invoice_number', 'like', "%{$s}%")->orWhereHas('purchaseOrder', fn($pq) => $pq->where('po_number', 'like', "%{$s}%"))))
             ->when($request->status, fn($q, $s) => $q->where('status', $s))
             ->when($request->client_id, fn($q, $c) => $q->where('client_id', $c))
             ->when($request->date_from, fn($q, $d) => $q->where('invoice_date', '>=', $d))

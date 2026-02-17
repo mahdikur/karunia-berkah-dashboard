@@ -14,7 +14,7 @@
                     <div class="card-body">
                         <div class="mb-3">
                             <label class="form-label">Client <span class="text-danger">*</span></label>
-                            <select class="form-select @error('client_id') is-invalid @enderror" name="client_id" id="clientSelect" required>
+                            <select class="form-select select2 @error('client_id') is-invalid @enderror" name="client_id" id="clientSelect" required>
                                 <option value="">Pilih Client</option>
                                 @foreach($clients as $c)
                                     <option value="{{ $c->id }}" {{ old('client_id') == $c->id ? 'selected' : '' }}>{{ $c->name }}</option>
@@ -54,6 +54,7 @@
                                         <th>Item</th>
                                         <th width="100">Qty</th>
                                         <th width="80">Satuan</th>
+                                        <th width="180">Harga Beli</th>
                                         <th width="180">Harga Jual</th>
                                         <th width="180">Subtotal</th>
                                         <th width="50"></th>
@@ -62,7 +63,7 @@
                                 <tbody id="itemsBody">
                                     <tr class="item-row" data-index="0">
                                         <td>
-                                            <select class="form-select form-select-sm item-select" name="items[0][item_id]" required>
+                                            <select class="form-select form-select-sm item-select select2" name="items[0][item_id]" required>
                                                 <option value="">Pilih Item</option>
                                                 @foreach($items as $item)
                                                     <option value="{{ $item->id }}" data-unit="{{ $item->unit }}">{{ $item->code }} - {{ $item->name }}</option>
@@ -71,6 +72,7 @@
                                         </td>
                                         <td><input type="number" class="form-control form-control-sm qty-input" name="items[0][quantity]" min="0.01" step="0.01" value="1" required></td>
                                         <td><input type="text" class="form-control form-control-sm unit-input" name="items[0][unit]" required></td>
+                                        <td><input type="number" class="form-control form-control-sm purchase-price-input" name="items[0][purchase_price]" min="0" step="1" value="0"></td>
                                         <td><input type="number" class="form-control form-control-sm price-input" name="items[0][selling_price]" min="0" step="1" value="0" required></td>
                                         <td class="subtotal-cell fw-semibold">Rp 0</td>
                                         <td><button type="button" class="btn btn-sm btn-outline-danger remove-item"><i class="bi bi-x"></i></button></td>
@@ -78,8 +80,18 @@
                                 </tbody>
                                 <tfoot>
                                     <tr class="table-light">
-                                        <td colspan="4" class="text-end fw-bold">Total:</td>
+                                        <td colspan="5" class="text-end fw-bold">Total (Beli):</td>
+                                        <td class="fw-bold text-muted" id="totalPurchase">Rp 0</td>
+                                        <td></td>
+                                    </tr>
+                                    <tr class="table-light">
+                                        <td colspan="5" class="text-end fw-bold">Total (Jual):</td>
                                         <td class="fw-bold" id="grandTotal">Rp 0</td>
+                                        <td></td>
+                                    </tr>
+                                    <tr class="table-success">
+                                        <td colspan="5" class="text-end fw-bold">Estimasi Profit:</td>
+                                        <td class="fw-bold" id="profitEstimate">Rp 0</td>
                                         <td></td>
                                     </tr>
                                 </tfoot>
@@ -107,15 +119,23 @@
         }
 
         function calculateTotals() {
-            let total = 0;
+            let totalJual = 0;
+            let totalBeli = 0;
             document.querySelectorAll('.item-row').forEach(row => {
                 const qty = parseFloat(row.querySelector('.qty-input').value) || 0;
-                const price = parseFloat(row.querySelector('.price-input').value) || 0;
-                const sub = qty * price;
-                row.querySelector('.subtotal-cell').textContent = formatRupiah(sub);
-                total += sub;
+                const priceJual = parseFloat(row.querySelector('.price-input').value) || 0;
+                const priceBeli = parseFloat(row.querySelector('.purchase-price-input').value) || 0;
+                
+                const subJual = qty * priceJual;
+                const subBeli = qty * priceBeli;
+                
+                row.querySelector('.subtotal-cell').textContent = formatRupiah(subJual);
+                totalJual += subJual;
+                totalBeli += subBeli;
             });
-            document.getElementById('grandTotal').textContent = formatRupiah(total);
+            document.getElementById('totalPurchase').textContent = formatRupiah(totalBeli);
+            document.getElementById('grandTotal').textContent = formatRupiah(totalJual);
+            document.getElementById('profitEstimate').textContent = formatRupiah(totalJual - totalBeli);
         }
 
         function buildItemOptions() {
@@ -126,55 +146,95 @@
             return html;
         }
 
-        document.getElementById('addItem').addEventListener('click', function() {
-            const row = document.createElement('tr');
-            row.className = 'item-row';
-            row.dataset.index = itemIndex;
-            row.innerHTML = `
-                <td><select class="form-select form-select-sm item-select" name="items[${itemIndex}][item_id]" required>${buildItemOptions()}</select></td>
-                <td><input type="number" class="form-control form-control-sm qty-input" name="items[${itemIndex}][quantity]" min="0.01" step="0.01" value="1" required></td>
-                <td><input type="text" class="form-control form-control-sm unit-input" name="items[${itemIndex}][unit]" required></td>
-                <td><input type="number" class="form-control form-control-sm price-input" name="items[${itemIndex}][selling_price]" min="0" step="1" value="0" required></td>
-                <td class="subtotal-cell fw-semibold">Rp 0</td>
-                <td><button type="button" class="btn btn-sm btn-outline-danger remove-item"><i class="bi bi-x"></i></button></td>
-            `;
-            document.getElementById('itemsBody').appendChild(row);
-            attachRowEvents(row);
-            itemIndex++;
-        });
-
-        function attachRowEvents(row) {
-            row.querySelector('.item-select').addEventListener('change', function() {
-                const opt = this.options[this.selectedIndex];
-                row.querySelector('.unit-input').value = opt.dataset.unit || '';
-
-                // Fetch latest price
-                const clientId = document.getElementById('clientSelect').value;
-                if (clientId && this.value) {
-                    fetch(`{{ route('api.item-price') }}?client_id=${clientId}&item_id=${this.value}`)
-                        .then(r => r.json())
-                        .then(data => {
-                            if (data.selling_price !== undefined && data.selling_price !== null) {
-                                row.querySelector('.price-input').value = data.selling_price;
-                            } else {
-                                row.querySelector('.price-input').value = 0;
-                            }
-                            calculateTotals();
-                        });
-                }
-            });
-            row.querySelector('.qty-input').addEventListener('input', calculateTotals);
-            row.querySelector('.price-input').addEventListener('input', calculateTotals);
-            row.querySelector('.remove-item').addEventListener('click', function() {
-                if (document.querySelectorAll('.item-row').length > 1) {
-                    row.remove();
+        document.addEventListener("DOMContentLoaded", function() {
+            // Check for jQuery
+            if (typeof $ !== 'undefined') {
+                $(document).ready(function() {
+                    $('.select2').select2({ theme: 'bootstrap-5', width: '100%' });
+                    $('.item-select.select2').select2({ theme: 'bootstrap-5', width: '100%' });
+                    
+                    document.querySelectorAll('.item-row').forEach(attachRowEvents);
                     calculateTotals();
-                }
-            });
-        }
+                });
+            } else {
+                console.error("jQuery is not loaded");
+                // Fallback for non-jQuery Select2 initialization if needed, or just proceed without it
+                document.querySelectorAll('.item-row').forEach(attachRowEvents);
+                calculateTotals();
+            }
 
-        document.querySelectorAll('.item-row').forEach(attachRowEvents);
-        calculateTotals();
+            document.getElementById('addItem').addEventListener('click', function() {
+                const row = document.createElement('tr');
+                row.className = 'item-row';
+                row.dataset.index = itemIndex;
+                row.innerHTML = `
+                    <td><select class="form-select form-select-sm item-select select2" name="items[${itemIndex}][item_id]" required>${buildItemOptions()}</select></td>
+                    <td><input type="number" class="form-control form-control-sm qty-input" name="items[${itemIndex}][quantity]" min="0.01" step="0.01" value="1" required></td>
+                    <td><input type="text" class="form-control form-control-sm unit-input" name="items[${itemIndex}][unit]" required></td>
+                    <td><input type="number" class="form-control form-control-sm purchase-price-input" name="items[${itemIndex}][purchase_price]" min="0" step="1" value="0"></td>
+                    <td><input type="number" class="form-control form-control-sm price-input" name="items[${itemIndex}][selling_price]" min="0" step="1" value="0" required></td>
+                    <td class="subtotal-cell fw-semibold">Rp 0</td>
+                    <td><button type="button" class="btn btn-sm btn-outline-danger remove-item"><i class="bi bi-x"></i></button></td>
+                `;
+                document.getElementById('itemsBody').appendChild(row);
+                
+                if (typeof $ !== 'undefined') {
+                    $(row.querySelector('.item-select')).select2({ theme: 'bootstrap-5', width: '100%' });
+                }
+
+                attachRowEvents(row);
+                itemIndex++;
+            });
+
+            function attachRowEvents(row) {
+                const selectEl = row.querySelector('.item-select');
+                
+                const handleSelection = function() {
+                    const selectedOption = selectEl.querySelector(`option[value="${selectEl.value}"]`);
+                    const unit = selectedOption ? selectedOption.dataset.unit : '';
+                    row.querySelector('.unit-input').value = unit || '';
+
+                    // Fetch latest price
+                    const clientId = document.getElementById('clientSelect').value;
+                    if (clientId && selectEl.value) {
+                        fetch(`{{ route('api.item-price') }}?client_id=${clientId}&item_id=${selectEl.value}`)
+                            .then(r => r.json())
+                            .then(data => {
+                                if (data.selling_price !== undefined && data.selling_price !== null) {
+                                    row.querySelector('.price-input').value = data.selling_price;
+                                } else {
+                                    row.querySelector('.price-input').value = 0;
+                                }
+                                if (data.purchase_price !== undefined && data.purchase_price !== null) {
+                                    row.querySelector('.purchase-price-input').value = data.purchase_price;
+                                } else {
+                                    row.querySelector('.purchase-price-input').value = 0;
+                                }
+                                calculateTotals();
+                            });
+                    }
+                };
+
+                if (typeof $ !== 'undefined') {
+                    $(selectEl).on('select2:select change', handleSelection);
+                } else {
+                    selectEl.addEventListener('change', handleSelection);
+                }
+
+                row.querySelector('.qty-input').addEventListener('input', calculateTotals);
+                row.querySelector('.purchase-price-input').addEventListener('input', calculateTotals);
+                row.querySelector('.price-input').addEventListener('input', calculateTotals);
+                row.querySelector('.remove-item').addEventListener('click', function() {
+                    if (document.querySelectorAll('.item-row').length > 1) {
+                        if (typeof $ !== 'undefined') {
+                            $(row.querySelector('.item-select')).select2('destroy');
+                        }
+                        row.remove();
+                        calculateTotals();
+                    }
+                });
+            }
+        });
     </script>
     @endpush
 </x-app-layout>

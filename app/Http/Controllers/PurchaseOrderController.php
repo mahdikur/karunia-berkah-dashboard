@@ -49,6 +49,7 @@ class PurchaseOrderController extends Controller
             'items.*.item_id' => 'required|exists:items,id',
             'items.*.quantity' => 'required|numeric|min:0.01',
             'items.*.unit' => 'required|string',
+            'items.*.purchase_price' => 'nullable|numeric|min:0',
             'items.*.selling_price' => 'required|numeric|min:0',
         ]);
 
@@ -68,9 +69,33 @@ class PurchaseOrderController extends Controller
                 'item_id' => $item['item_id'],
                 'quantity' => $item['quantity'],
                 'unit' => $item['unit'],
+                'purchase_price' => $item['purchase_price'] ?? 0,
                 'selling_price' => $item['selling_price'],
                 'notes' => $item['notes'] ?? null,
             ]);
+
+            // Track price history only if prices changed
+            $latestPrice = ItemPriceHistory::where('client_id', $po->client_id)
+                ->where('item_id', $item['item_id'])
+                ->latest('changed_at')
+                ->first();
+
+            $priceChanged = !$latestPrice || 
+                            (float)$latestPrice->purchase_price !== (float)($item['purchase_price'] ?? 0) || 
+                            (float)$latestPrice->selling_price !== (float)$item['selling_price'];
+
+            if ($priceChanged) {
+                ItemPriceHistory::create([
+                    'client_id' => $po->client_id,
+                    'item_id' => $item['item_id'],
+                    'purchase_price' => $item['purchase_price'] ?? 0,
+                    'selling_price' => $item['selling_price'],
+                    'changed_by' => auth()->id(),
+                    'changed_at' => now(),
+                    'reference_type' => 'po',
+                    'reference_id' => $po->id,
+                ]);
+            }
         }
 
         $message = $po->status === 'pending_approval'
@@ -114,6 +139,7 @@ class PurchaseOrderController extends Controller
             'items.*.item_id' => 'required|exists:items,id',
             'items.*.quantity' => 'required|numeric|min:0.01',
             'items.*.unit' => 'required|string',
+            'items.*.purchase_price' => 'nullable|numeric|min:0',
             'items.*.selling_price' => 'required|numeric|min:0',
         ]);
 
@@ -134,9 +160,33 @@ class PurchaseOrderController extends Controller
                 'item_id' => $item['item_id'],
                 'quantity' => $item['quantity'],
                 'unit' => $item['unit'],
+                'purchase_price' => $item['purchase_price'] ?? 0,
                 'selling_price' => $item['selling_price'],
                 'notes' => $item['notes'] ?? null,
             ]);
+
+            // Track price history only if prices changed
+            $latestPrice = ItemPriceHistory::where('client_id', $purchaseOrder->client_id)
+                ->where('item_id', $item['item_id'])
+                ->latest('changed_at')
+                ->first();
+
+            $priceChanged = !$latestPrice || 
+                            (float)$latestPrice->purchase_price !== (float)($item['purchase_price'] ?? 0) || 
+                            (float)$latestPrice->selling_price !== (float)$item['selling_price'];
+
+            if ($priceChanged) {
+                ItemPriceHistory::create([
+                    'client_id' => $purchaseOrder->client_id,
+                    'item_id' => $item['item_id'],
+                    'purchase_price' => $item['purchase_price'] ?? 0,
+                    'selling_price' => $item['selling_price'],
+                    'changed_by' => auth()->id(),
+                    'changed_at' => now(),
+                    'reference_type' => 'po',
+                    'reference_id' => $purchaseOrder->id,
+                ]);
+            }
         }
 
         return redirect()->route('purchase-orders.show', $purchaseOrder)->with('success', 'PO berhasil diperbarui.');
@@ -212,17 +262,28 @@ class PurchaseOrderController extends Controller
                 'selling_price' => $priceData['selling_price'],
             ]);
 
-            // Save price history
-            ItemPriceHistory::create([
-                'client_id' => $purchaseOrder->client_id,
-                'item_id' => $poItem->item_id,
-                'purchase_price' => $priceData['purchase_price'] ?? null,
-                'selling_price' => $priceData['selling_price'],
-                'changed_by' => auth()->id(),
-                'changed_at' => now(),
-                'reference_type' => 'po',
-                'reference_id' => $purchaseOrder->id,
-            ]);
+            // Save price history only if changed
+            $latestPrice = ItemPriceHistory::where('client_id', $purchaseOrder->client_id)
+                ->where('item_id', $poItem->item_id)
+                ->latest('changed_at')
+                ->first();
+
+            $priceChanged = !$latestPrice || 
+                            (float)$latestPrice->purchase_price !== (float)($priceData['purchase_price'] ?? 0) || 
+                            (float)$latestPrice->selling_price !== (float)$priceData['selling_price'];
+
+            if ($priceChanged) {
+                ItemPriceHistory::create([
+                    'client_id' => $purchaseOrder->client_id,
+                    'item_id' => $poItem->item_id,
+                    'purchase_price' => $priceData['purchase_price'] ?? 0,
+                    'selling_price' => $priceData['selling_price'],
+                    'changed_by' => auth()->id(),
+                    'changed_at' => now(),
+                    'reference_type' => 'po',
+                    'reference_id' => $purchaseOrder->id,
+                ]);
+            }
         }
 
         return back()->with('success', 'Harga berhasil diperbarui.');

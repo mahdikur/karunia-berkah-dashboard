@@ -4,6 +4,9 @@
         <h1>{{ $deliveryNote->dn_number }}</h1>
         <nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li><li class="breadcrumb-item"><a href="{{ route('delivery-notes.index') }}">Surat Jalan</a></li><li class="breadcrumb-item active">Detail</li></ol></nav>
     </div>
+    <div class="d-flex justify-content-end mb-3">
+         <a href="{{ route('delivery-notes.print', $deliveryNote) }}" target="_blank" class="btn btn-outline-secondary"><i class="bi bi-printer me-1"></i>Print</a>
+    </div>
     <div class="row g-3">
         <div class="col-lg-4">
             <div class="card">
@@ -26,7 +29,6 @@
                     <form action="{{ route('delivery-notes.update-status', $deliveryNote) }}" method="POST">
                         @csrf @method('PATCH')
                         <div class="d-flex gap-2 mb-2">
-                            <a href="{{ route('delivery-notes.print', $deliveryNote) }}" target="_blank" class="btn btn-outline-secondary w-100"><i class="bi bi-printer me-1"></i>Print</a>
                         </div>
                         <select class="form-select mb-2" name="status">
                             @if($deliveryNote->status === 'draft')<option value="sent">Dikirim</option>@endif

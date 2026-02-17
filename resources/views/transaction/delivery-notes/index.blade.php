@@ -22,7 +22,10 @@
                                 <td>{{ $dn->dn_date->format('d/m/Y') }}</td>
                                 <td><span class="badge bg-light text-dark">{{ ucfirst($dn->delivery_type) }}</span></td>
                                 <td>{!! $dn->status_badge !!}</td>
-                                <td><a href="{{ route('delivery-notes.show', $dn) }}" class="btn btn-sm btn-outline-info btn-action"><i class="bi bi-eye"></i></a></td>
+                                <td>
+                                    <a href="{{ route('delivery-notes.show', $dn) }}" class="btn btn-sm btn-outline-info btn-action"><i class="bi bi-eye"></i></a>
+                                    <a href="{{ route('delivery-notes.print', $dn) }}" target="_blank" class="btn btn-sm btn-outline-secondary btn-action"><i class="bi bi-printer"></i></a>
+                                </td>
                             </tr>
                         @empty
                             <tr><td colspan="8" class="text-center py-4 text-muted">Belum ada surat jalan.</td></tr>

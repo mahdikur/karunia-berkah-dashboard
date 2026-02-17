@@ -12,7 +12,7 @@ class DeliveryNoteController extends Controller
     public function index(Request $request)
     {
         $deliveryNotes = DeliveryNote::with('purchaseOrder', 'client', 'creator')
-            ->when($request->search, fn($q, $s) => $q->where('dn_number', 'like', "%{$s}%"))
+            ->when($request->search, fn($q, $s) => $q->where(fn($wq) => $wq->where('dn_number', 'like', "%{$s}%")->orWhereHas('purchaseOrder', fn($pq) => $pq->where('po_number', 'like', "%{$s}%"))))
             ->when($request->client_id, fn($q, $c) => $q->where('client_id', $c))
             ->when($request->status, fn($q, $s) => $q->where('status', $s))
             ->latest()

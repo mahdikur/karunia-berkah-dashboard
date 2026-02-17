@@ -95,7 +95,7 @@ class PurchaseOrder extends Model
             ->orderBy('po_number', 'desc')
             ->first();
 
-        if ($lastPo) {
+        if ($lastPo instanceof self) {
             $lastNumber = (int) substr($lastPo->po_number, -3);
             return $prefix . str_pad($lastNumber + 1, 3, '0', STR_PAD_LEFT);
         }

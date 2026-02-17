@@ -51,7 +51,11 @@
                                 <td>{!! $po->status_badge !!}</td>
                                 <td>{{ $po->creator->name ?? '-' }}</td>
                                 <td>
-                                    <a href="{{ route('purchase-orders.show', $po) }}" class="btn btn-sm btn-outline-info btn-action" title="Detail"><i class="bi bi-eye"></i></a>
+                                    <div class="d-flex gap-1">
+                                        <a href="{{ route('purchase-orders.show', $po) }}" class="btn btn-sm btn-outline-info" title="Detail"><i class="bi bi-eye"></i></a>
+                                        <a href="{{ route('delivery-notes.index', ['search' => $po->po_number]) }}" class="btn btn-sm btn-outline-secondary" title="List Surat Jalan"><i class="bi bi-truck"></i></a>
+                                        <a href="{{ route('invoices.index', ['search' => $po->po_number]) }}" class="btn btn-sm btn-outline-success" title="List Invoice"><i class="bi bi-receipt"></i></a>
+                                    </div>
                                 </td>
                             </tr>
                         @empty

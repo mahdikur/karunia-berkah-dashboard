@@ -5,19 +5,19 @@
             <h1>{{ $invoice->invoice_number }}</h1>
             <nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li><li class="breadcrumb-item"><a href="{{ route('invoices.index') }}">Invoice</a></li><li class="breadcrumb-item active">Detail</li></ol></nav>
         </div>
-        @if(in_array($invoice->status, ['unpaid','partial','overdue']))
-            <a href="{{ route('payments.create', ['invoice_id' => $invoice->id]) }}" class="btn btn-success"><i class="bi bi-cash me-1"></i>Catat Pembayaran</a>
-        @endif
+        <div class="d-flex gap-2">
+            @if(in_array($invoice->status, ['unpaid','partial','overdue']))
+                <a href="{{ route('payments.create', ['invoice_id' => $invoice->id]) }}" class="btn btn-success"><i class="bi bi-cash me-1"></i>Catat Pembayaran</a>
+            @endif
+            <a href="{{ route('invoices.print', $invoice) }}" target="_blank" class="btn btn-outline-secondary"><i class="bi bi-printer me-1"></i>Print</a>
+            {{-- @if($invoice->status !== 'paid' && $invoice->remaining_amount > 0)
+                <a href="{{ route('invoices.edit', $invoice) }}" class="btn btn-warning"><i class="bi bi-pencil me-1"></i>Edit</a>
+            @endif --}}
+        </div>
     </div>
 
     <div class="row g-3">
         <div class="col-lg-4">
-            <div class="d-flex gap-2 mb-3">
-                <a href="{{ route('invoices.print', $invoice) }}" target="_blank" class="btn btn-outline-secondary"><i class="bi bi-printer me-1"></i>Print</a>
-                @if($invoice->status !== 'paid' && $invoice->remaining_amount > 0)
-                    {{-- Additional buttons can go here --}}
-                @endif
-            </div>
             <div class="card">
                 <div class="card-body">
                     <div class="mb-3 text-center">{!! $invoice->status_badge !!}</div>

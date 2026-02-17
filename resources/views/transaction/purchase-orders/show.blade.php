@@ -72,10 +72,12 @@
                                 <tr>
                                     <th>#</th>
                                     <th>Item</th>
-                                    <th>Qty</th>
+                                    <th width="80">Qty</th>
                                     <th>Satuan</th>
+                                    <th>Harga Beli</th>
+                                    <th>Subtotal (B)</th>
                                     <th>Harga Jual</th>
-                                    <th>Subtotal</th>
+                                    <th>Subtotal (J)</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -85,6 +87,8 @@
                                         <td class="fw-semibold">{{ $poItem->item->name ?? '-' }}</td>
                                         <td>{{ number_format($poItem->quantity, 2) }}</td>
                                         <td>{{ $poItem->unit }}</td>
+                                        <td class="text-muted">{{ \App\Helpers\FormatHelper::rupiah($poItem->purchase_price) }}</td>
+                                        <td class="text-muted">{{ \App\Helpers\FormatHelper::rupiah($poItem->quantity * $poItem->purchase_price) }}</td>
                                         <td>{{ \App\Helpers\FormatHelper::rupiah($poItem->selling_price) }}</td>
                                         <td class="fw-semibold">{{ \App\Helpers\FormatHelper::rupiah($poItem->subtotal) }}</td>
                                     </tr>
@@ -92,9 +96,17 @@
                             </tbody>
                             <tfoot>
                                 <tr class="table-light">
-                                    <td colspan="5" class="text-end fw-bold">Total</td>
+                                    <td colspan="5" class="text-end text-muted">Total (Beli):</td>
+                                    <td class="text-muted">{{ \App\Helpers\FormatHelper::rupiah($purchaseOrder->total_purchase) }}</td>
+                                    <td class="text-end fw-bold">Total (Jual):</td>
                                     <td class="fw-bold">{{ \App\Helpers\FormatHelper::rupiah($purchaseOrder->total_amount) }}</td>
                                 </tr>
+                                @if(auth()->user()->isSuperadmin())
+                                <tr class="table-success">
+                                    <td colspan="7" class="text-end fw-bold">Margin / Profit Estimate:</td>
+                                    <td class="fw-bold">{{ \App\Helpers\FormatHelper::rupiah($purchaseOrder->total_amount - $purchaseOrder->total_purchase) }}</td>
+                                </tr>
+                                @endif
                             </tfoot>
                         </table>
                     </div>

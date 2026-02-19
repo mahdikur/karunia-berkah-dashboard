@@ -231,9 +231,7 @@ class InvoiceController extends Controller
 
     public function batch()
     {
-        $clients = Client::active()->whereHas('invoices', function ($q) {
-            $q->whereIn('status', ['unpaid', 'partial', 'overdue']);
-        })->orderBy('name')->get();
+        $clients = Client::active()->whereHas('invoices')->orderBy('name')->get();
 
         return view('transaction.invoices.batch', compact('clients'));
     }
@@ -242,8 +240,20 @@ class InvoiceController extends Controller
     {
         $request->validate(['client_id' => 'required|exists:clients,id']);
 
+        $allowedStatuses = ['unpaid', 'partial', 'overdue', 'paid'];
+        $statuses = collect($request->statuses ?? [])
+            ->filter(fn($s) => in_array($s, $allowedStatuses))
+            ->values()
+            ->toArray();
+
+        if (empty($statuses)) {
+            $statuses = ['unpaid', 'partial', 'overdue'];
+        }
+
         $invoices = Invoice::where('client_id', $request->client_id)
-            ->whereIn('status', ['unpaid', 'partial', 'overdue'])
+            ->whereIn('status', $statuses)
+            ->when($request->date_from, fn($q, $d) => $q->where('invoice_date', '>=', $d))
+            ->when($request->date_to, fn($q, $d) => $q->where('invoice_date', '<=', $d))
             ->with('purchaseOrder.items', 'items')
             ->latest()
             ->get()
@@ -251,6 +261,7 @@ class InvoiceController extends Controller
                 return [
                     'id' => $inv->id,
                     'invoice_number' => $inv->invoice_number,
+                    'invoice_date' => $inv->invoice_date ? $inv->invoice_date->format('d/m/Y') : '-',
                     'po_number' => $inv->purchaseOrder->po_number ?? '-',
                     'po_date' => $inv->purchaseOrder->po_date ? $inv->purchaseOrder->po_date->format('d/m/Y') : '-',
                     'total_items' => $inv->purchaseOrder->items->sum('quantity'),
@@ -265,8 +276,7 @@ class InvoiceController extends Controller
 
     public function batchPrint(Request $request)
     {
-        $query = Invoice::whereIn('status', ['unpaid', 'partial', 'overdue'])
-            ->with('purchaseOrder.items', 'client', 'items.item');
+        $query = Invoice::with('purchaseOrder.items', 'client', 'items.item');
 
         if ($request->invoice_ids) {
             $ids = is_array($request->invoice_ids) ? $request->invoice_ids : explode(',', $request->invoice_ids);

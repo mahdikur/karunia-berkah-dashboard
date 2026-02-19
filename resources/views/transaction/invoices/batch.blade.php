@@ -14,10 +14,10 @@
     </div>
 
     <div class="card mb-3">
-        <div class="card-header"><i class="bi bi-building me-2"></i>Pilih Client</div>
+        <div class="card-header"><i class="bi bi-funnel me-2"></i>Filter Invoice</div>
         <div class="card-body">
-            <div class="row align-items-end">
-                <div class="col-md-6">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-4">
                     <label class="form-label">Client <span class="text-danger">*</span></label>
                     <select class="form-select" id="clientSelect">
                         <option value="">-- Pilih Client --</option>
@@ -26,9 +26,38 @@
                         @endforeach
                     </select>
                 </div>
+                <div class="col-md-2">
+                    <label class="form-label">Tgl Invoice Dari</label>
+                    <input type="date" class="form-control" id="filterDateFrom">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Tgl Invoice S/d</label>
+                    <input type="date" class="form-control" id="filterDateTo">
+                </div>
                 <div class="col-md-3">
+                    <label class="form-label">Status</label>
+                    <div class="d-flex flex-wrap gap-2">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input status-filter" type="checkbox" id="stUnpaid" value="unpaid" checked>
+                            <label class="form-check-label" for="stUnpaid"><span class="badge bg-warning text-dark">Unpaid</span></label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input status-filter" type="checkbox" id="stPartial" value="partial" checked>
+                            <label class="form-check-label" for="stPartial"><span class="badge bg-info">Partial</span></label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input status-filter" type="checkbox" id="stOverdue" value="overdue" checked>
+                            <label class="form-check-label" for="stOverdue"><span class="badge bg-danger">Overdue</span></label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input status-filter" type="checkbox" id="stPaid" value="paid">
+                            <label class="form-check-label" for="stPaid"><span class="badge bg-success">Paid</span></label>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-1">
                     <button type="button" class="btn btn-primary w-100" id="btnLoadInvoices">
-                        <i class="bi bi-search me-1"></i>Tampilkan Invoice
+                        <i class="bi bi-search"></i>
                     </button>
                 </div>
             </div>
@@ -185,7 +214,7 @@
             const tbody = document.getElementById('invoiceTableBody');
 
             if (invoices.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4 text-muted">Tidak ada invoice yang belum lunas untuk client ini.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4 text-muted">Tidak ada invoice yang sesuai filter untuk client ini.</td></tr>';
                 return;
             }
 
@@ -195,13 +224,16 @@
                     'unpaid': '<span class="badge bg-warning text-dark">Unpaid</span>',
                     'partial': '<span class="badge bg-info">Partial</span>',
                     'overdue': '<span class="badge bg-danger">Overdue</span>',
+                    'paid': '<span class="badge bg-success">Paid</span>',
                 }[inv.status] || '<span class="badge bg-secondary">' + inv.status + '</span>';
 
-                html += `<tr>
+                const isPaid = inv.status === 'paid';
+
+                html += `<tr class="${isPaid ? 'table-success' : ''}">
                     <td class="text-center">
                         <input class="form-check-input invoice-checkbox" type="checkbox" value="${inv.id}" id="inv_${inv.id}">
                     </td>
-                    <td><strong>${inv.invoice_number}</strong></td>
+                    <td><strong>${inv.invoice_number}</strong><br><small class="text-muted">${inv.invoice_date || ''}</small></td>
                     <td>${inv.po_number || '-'}</td>
                     <td class="text-center">${inv.total_items}</td>
                     <td>${inv.po_date || '-'}</td>
@@ -258,25 +290,42 @@
             recalcTotals();
         });
 
-        document.getElementById('btnLoadInvoices').addEventListener('click', function() {
+        function loadInvoices() {
             const clientId = document.getElementById('clientSelect').value;
             if (!clientId) {
                 alert('Silakan pilih client terlebih dahulu.');
                 return;
             }
 
+            const statuses = [...document.querySelectorAll('.status-filter:checked')].map(el => el.value);
+            if (statuses.length === 0) {
+                alert('Pilih minimal 1 status filter.');
+                return;
+            }
+
+            const dateFrom = document.getElementById('filterDateFrom').value;
+            const dateTo = document.getElementById('filterDateTo').value;
+
+            const params = new URLSearchParams();
+            params.append('client_id', clientId);
+            statuses.forEach(s => params.append('statuses[]', s));
+            if (dateFrom) params.append('date_from', dateFrom);
+            if (dateTo) params.append('date_to', dateTo);
+
             const tbody = document.getElementById('invoiceTableBody');
             tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary" role="status"></div> Memuat...</td></tr>';
             document.getElementById('invoiceSection').style.display = 'block';
 
-            fetch(`{{ url('invoices/batch/invoices') }}?client_id=${clientId}`)
+            fetch(`{{ url('invoices/batch/invoices') }}?${params.toString()}`)
                 .then(r => r.json())
                 .then(data => renderInvoices(data))
                 .catch(err => {
                     tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4 text-danger">Gagal memuat data invoice.</td></tr>';
                     console.error(err);
                 });
-        });
+        }
+
+        document.getElementById('btnLoadInvoices').addEventListener('click', loadInvoices);
 
         document.getElementById('btnBatchPrint').addEventListener('click', function() {
             const selected = document.querySelectorAll('.invoice-checkbox:checked');

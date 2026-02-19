@@ -70,6 +70,6 @@
                 </table>
             </div>
         </div>
-        @if($payments->hasPages())<div class="card-footer d-flex justify-content-center">{{ $payments->links() }}</div>@endif
+        @if($payments->hasPages())<div class="card-footer d-flex justify-content-center">{{ $payments->links('pagination::bootstrap-5') }}</div>@endif
     </div>
 </x-app-layout>

@@ -70,7 +70,7 @@
         </div>
         @if($categories->hasPages())
             <div class="card-footer d-flex justify-content-center">
-                {{ $categories->links() }}
+                {{ $categories->links('pagination::bootstrap-5') }}
             </div>
         @endif
     </div>

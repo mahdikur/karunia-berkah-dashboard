@@ -99,6 +99,6 @@
                 </table>
             </div>
         </div>
-        @if($returnNotes->hasPages())<div class="card-footer d-flex justify-content-center">{{ $returnNotes->links() }}</div>@endif
+        @if($returnNotes->hasPages())<div class="card-footer d-flex justify-content-center">{{ $returnNotes->links('pagination::bootstrap-5') }}</div>@endif
     </div>
 </x-app-layout>

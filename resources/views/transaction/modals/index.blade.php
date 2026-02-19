@@ -44,6 +44,6 @@
             </tbody>
         </table>
     </div></div>
-    @if($modals->hasPages())<div class="card-footer d-flex justify-content-center">{{ $modals->links() }}</div>@endif
+    @if($modals->hasPages())<div class="card-footer d-flex justify-content-center">{{ $modals->links('pagination::bootstrap-5') }}</div>@endif
     </div>
 </x-app-layout>

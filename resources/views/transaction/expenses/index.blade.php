@@ -55,6 +55,6 @@
             </tbody>
         </table>
     </div></div>
-    @if($expenses->hasPages())<div class="card-footer d-flex justify-content-center">{{ $expenses->links() }}</div>@endif
+    @if($expenses->hasPages())<div class="card-footer d-flex justify-content-center">{{ $expenses->links('pagination::bootstrap-5') }}</div>@endif
     </div>
 </x-app-layout>

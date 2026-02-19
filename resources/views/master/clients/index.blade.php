@@ -81,7 +81,7 @@
             </div>
         </div>
         @if($clients->hasPages())
-            <div class="card-footer d-flex justify-content-center">{{ $clients->withQueryString()->links() }}</div>
+            <div class="card-footer d-flex justify-content-center">{{ $clients->withQueryString()->links('pagination::bootstrap-5') }}</div>
         @endif
     </div>
 </x-app-layout>

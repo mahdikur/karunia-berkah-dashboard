@@ -88,6 +88,6 @@
                 </table>
             </div>
         </div>
-        @if($invoices->hasPages())<div class="card-footer d-flex justify-content-center">{{ $invoices->withQueryString()->links() }}</div>@endif
+        @if($invoices->hasPages())<div class="card-footer d-flex justify-content-center">{{ $invoices->withQueryString()->links('pagination::bootstrap-5') }}</div>@endif
     </div>
 </x-app-layout>

@@ -80,7 +80,7 @@
             </div>
         </div>
         @if($purchaseOrders->hasPages())
-            <div class="card-footer d-flex justify-content-center">{{ $purchaseOrders->withQueryString()->links() }}</div>
+            <div class="card-footer d-flex justify-content-center">{{ $purchaseOrders->withQueryString()->links('pagination::bootstrap-5') }}</div>
         @endif
     </div>
 </x-app-layout>

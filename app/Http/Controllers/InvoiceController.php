@@ -62,9 +62,9 @@ class InvoiceController extends Controller
             return back()->with('error', 'PO ini sudah memiliki invoice.');
         }
 
-        // Calculate totals
         $subtotal = 0;
         foreach ($request->items as $item) {
+            if (isset($item['include']) && !$item['include']) continue;
             $subtotal += $item['quantity'] * $item['unit_price'];
         }
 
@@ -99,6 +99,7 @@ class InvoiceController extends Controller
         ]);
 
         foreach ($request->items as $item) {
+            if (isset($item['include']) && !$item['include']) continue;
             $poItem = $po->items()->findOrFail($item['po_item_id']);
             InvoiceItem::create([
                 'invoice_id' => $invoice->id,
@@ -110,7 +111,6 @@ class InvoiceController extends Controller
                 'subtotal' => $item['quantity'] * $item['unit_price'],
             ]);
 
-            // Save price history
             ItemPriceHistory::create([
                 'client_id' => $po->client_id,
                 'item_id' => $poItem->item_id,
@@ -132,10 +132,124 @@ class InvoiceController extends Controller
         return view('transaction.invoices.show', compact('invoice'));
     }
 
+    public function edit(Invoice $invoice)
+    {
+        if ($invoice->status === 'paid') {
+            return back()->with('error', 'Invoice yang sudah lunas tidak bisa diedit.');
+        }
+
+        $invoice->load('purchaseOrder.items.item', 'items.item', 'payments');
+        return view('transaction.invoices.edit', compact('invoice'));
+    }
+
+    public function update(Request $request, Invoice $invoice)
+    {
+        if ($invoice->status === 'paid') {
+            return back()->with('error', 'Invoice yang sudah lunas tidak bisa diedit.');
+        }
+
+        $request->validate([
+            'invoice_date' => 'required|date',
+            'due_date' => 'required|date|after_or_equal:invoice_date',
+            'discount_type' => 'required|in:percentage,fixed',
+            'discount_value' => 'nullable|numeric|min:0',
+            'tax_percentage' => 'nullable|numeric|min:0|max:100',
+            'notes' => 'nullable|string',
+            'items' => 'required|array|min:1',
+            'items.*.po_item_id' => 'required',
+            'items.*.quantity' => 'required|numeric|min:0.01',
+            'items.*.unit_price' => 'required|numeric|min:0',
+        ]);
+
+        $subtotal = 0;
+        foreach ($request->items as $item) {
+            $subtotal += $item['quantity'] * $item['unit_price'];
+        }
+
+        $discountValue = $request->discount_value ?? 0;
+        $discountAmount = $request->discount_type === 'percentage'
+            ? ($subtotal * $discountValue / 100)
+            : $discountValue;
+
+        $afterDiscount = $subtotal - $discountAmount;
+        $taxPercentage = $request->tax_percentage ?? 0;
+        $taxAmount = $afterDiscount * $taxPercentage / 100;
+        $totalAmount = $afterDiscount + $taxAmount;
+
+        $paidAmount = $invoice->paid_amount;
+        $remainingAmount = $totalAmount - $paidAmount;
+
+        $status = 'unpaid';
+        if ($paidAmount >= $totalAmount) {
+            $status = 'paid';
+        } elseif ($paidAmount > 0) {
+            $status = 'partial';
+        } elseif ($invoice->due_date < now() && $totalAmount > 0) {
+            $status = 'overdue';
+        }
+
+        $invoice->update([
+            'invoice_date' => $request->invoice_date,
+            'due_date' => $request->due_date,
+            'subtotal' => $subtotal,
+            'discount_type' => $request->discount_type,
+            'discount_value' => $discountValue,
+            'discount_amount' => $discountAmount,
+            'tax_percentage' => $taxPercentage,
+            'tax_amount' => $taxAmount,
+            'total_amount' => $totalAmount,
+            'remaining_amount' => $remainingAmount,
+            'status' => $status,
+            'notes' => $request->notes,
+        ]);
+
+        // Recreate items
+        $invoice->items()->delete();
+        $po = $invoice->purchaseOrder;
+
+        foreach ($request->items as $item) {
+            $poItem = $po->items()->findOrFail($item['po_item_id']);
+            InvoiceItem::create([
+                'invoice_id' => $invoice->id,
+                'po_item_id' => $item['po_item_id'],
+                'item_id' => $poItem->item_id,
+                'quantity' => $item['quantity'],
+                'unit' => $poItem->unit,
+                'unit_price' => $item['unit_price'],
+                'subtotal' => $item['quantity'] * $item['unit_price'],
+            ]);
+        }
+
+        return redirect()->route('invoices.show', $invoice)->with('success', 'Invoice berhasil diperbarui.');
+    }
+
     public function print(Invoice $invoice)
     {
         $invoice->load('purchaseOrder', 'client', 'creator', 'items.item');
         return view('transaction.invoices.print', compact('invoice'));
+    }
+
+    public function batchPrint(Request $request)
+    {
+        $query = Invoice::whereIn('status', ['unpaid', 'partial', 'overdue'])
+            ->with('purchaseOrder', 'client', 'items.item');
+
+        if ($request->invoice_ids) {
+            $ids = is_array($request->invoice_ids) ? $request->invoice_ids : explode(',', $request->invoice_ids);
+            $query->whereIn('id', $ids);
+        }
+
+        if ($request->client_id) {
+            $query->where('client_id', $request->client_id);
+        }
+
+        $invoices = $query->latest()->get();
+
+        if ($invoices->isEmpty()) {
+            return back()->with('error', 'Tidak ada invoice yang belum bayar untuk dicetak.');
+        }
+
+        return view('transaction.invoices.batch-print', compact('invoices'));
     }
 
     public function destroy(Invoice $invoice)

@@ -11,7 +11,7 @@
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover mb-0">
-                    <thead><tr><th>#</th><th>No. SJ</th><th>No. PO</th><th>Client</th><th>Tanggal</th><th>Tipe</th><th>Status</th><th>Aksi</th></tr></thead>
+                    <thead><tr><th>#</th><th>No. SJ</th><th>No. PO</th><th>Client</th><th>Tanggal</th><th>Tipe</th><th>Status</th><th width="140">Aksi</th></tr></thead>
                     <tbody>
                         @forelse($deliveryNotes as $dn)
                             <tr>
@@ -23,8 +23,13 @@
                                 <td><span class="badge bg-light text-dark">{{ ucfirst($dn->delivery_type) }}</span></td>
                                 <td>{!! $dn->status_badge !!}</td>
                                 <td>
-                                    <a href="{{ route('delivery-notes.show', $dn) }}" class="btn btn-sm btn-outline-info btn-action"><i class="bi bi-eye"></i></a>
-                                    <a href="{{ route('delivery-notes.print', $dn) }}" target="_blank" class="btn btn-sm btn-outline-secondary btn-action"><i class="bi bi-printer"></i></a>
+                                    <div class="d-flex gap-1">
+                                        <a href="{{ route('delivery-notes.show', $dn) }}" class="btn btn-sm btn-outline-info" title="Detail"><i class="bi bi-eye"></i></a>
+                                        @if($dn->status !== 'received')
+                                        <a href="{{ route('delivery-notes.edit', $dn) }}" class="btn btn-sm btn-outline-warning" title="Edit"><i class="bi bi-pencil"></i></a>
+                                        @endif
+                                        <a href="{{ route('delivery-notes.print', $dn) }}" target="_blank" class="btn btn-sm btn-outline-secondary" title="Print"><i class="bi bi-printer"></i></a>
+                                    </div>
                                 </td>
                             </tr>
                         @empty

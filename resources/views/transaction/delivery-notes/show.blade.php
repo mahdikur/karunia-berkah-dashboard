@@ -1,11 +1,17 @@
 <x-app-layout>
     <x-slot name="title">Detail SJ - {{ $deliveryNote->dn_number }}</x-slot>
-    <div class="page-header">
-        <h1>{{ $deliveryNote->dn_number }}</h1>
-        <nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li><li class="breadcrumb-item"><a href="{{ route('delivery-notes.index') }}">Surat Jalan</a></li><li class="breadcrumb-item active">Detail</li></ol></nav>
-    </div>
-    <div class="d-flex justify-content-end mb-3">
-         <a href="{{ route('delivery-notes.print', $deliveryNote) }}" target="_blank" class="btn btn-outline-secondary"><i class="bi bi-printer me-1"></i>Print</a>
+    <div class="page-header d-flex justify-content-between align-items-start">
+        <div>
+            <h1>{{ $deliveryNote->dn_number }}</h1>
+            <nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li><li class="breadcrumb-item"><a href="{{ route('delivery-notes.index') }}">Surat Jalan</a></li><li class="breadcrumb-item active">Detail</li></ol></nav>
+        </div>
+        <div class="d-flex gap-2">
+            @if($deliveryNote->status !== 'received')
+                <a href="{{ route('delivery-notes.edit', $deliveryNote) }}" class="btn btn-outline-warning"><i class="bi bi-pencil me-1"></i>Edit</a>
+            @endif
+            <a href="{{ route('delivery-notes.print', $deliveryNote) }}" target="_blank" class="btn btn-outline-secondary"><i class="bi bi-printer me-1"></i>Print</a>
+            <a href="{{ route('return-notes.create', ['dn_id' => $deliveryNote->id]) }}" class="btn btn-outline-danger"><i class="bi bi-arrow-return-left me-1"></i>Buat Retur</a>
+        </div>
     </div>
     <div class="row g-3">
         <div class="col-lg-4">
@@ -18,6 +24,9 @@
                         <tr><td class="text-muted">Tanggal</td><td>{{ $deliveryNote->dn_date->format('d/m/Y') }}</td></tr>
                         <tr><td class="text-muted">Tipe</td><td>{{ ucfirst($deliveryNote->delivery_type) }}</td></tr>
                         <tr><td class="text-muted">Dibuat</td><td>{{ $deliveryNote->creator->name ?? '-' }}</td></tr>
+                        @if($deliveryNote->notes)
+                        <tr><td class="text-muted">Catatan</td><td>{{ $deliveryNote->notes }}</td></tr>
+                        @endif
                     </table>
                 </div>
             </div>
@@ -28,8 +37,6 @@
                 <div class="card-body">
                     <form action="{{ route('delivery-notes.update-status', $deliveryNote) }}" method="POST">
                         @csrf @method('PATCH')
-                        <div class="d-flex gap-2 mb-2">
-                        </div>
                         <select class="form-select mb-2" name="status">
                             @if($deliveryNote->status === 'draft')<option value="sent">Dikirim</option>@endif
                             @if($deliveryNote->status === 'sent')<option value="received">Diterima</option>@endif
@@ -39,16 +46,57 @@
                 </div>
             </div>
             @endif
+
+            {{-- Return Notes --}}
+            @if($deliveryNote->returnNotes && $deliveryNote->returnNotes->count())
+            <div class="card mt-3">
+                <div class="card-header"><i class="bi bi-arrow-return-left me-2"></i>Retur Terkait</div>
+                <div class="card-body p-0">
+                    <table class="table table-sm mb-0">
+                        <thead><tr><th>No. Retur</th><th>Status</th></tr></thead>
+                        <tbody>
+                            @foreach($deliveryNote->returnNotes as $rn)
+                            <tr>
+                                <td><a href="{{ route('return-notes.show', $rn) }}">{{ $rn->return_number }}</a></td>
+                                <td>{!! $rn->status_badge !!}</td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            @endif
         </div>
         <div class="col-lg-8">
             <div class="card">
                 <div class="card-header">Item Terkirim</div>
                 <div class="card-body p-0">
                     <table class="table mb-0">
-                        <thead><tr><th>#</th><th>Item</th><th>Qty Kirim</th><th>Satuan</th></tr></thead>
+                        <thead><tr><th>#</th><th>Item</th><th>Qty Kirim</th><th>Satuan</th><th>Status</th></tr></thead>
                         <tbody>
                             @foreach($deliveryNote->items as $i => $dnItem)
-                                <tr><td>{{ $i+1 }}</td><td>{{ $dnItem->item->name ?? '-' }}</td><td>{{ number_format($dnItem->quantity_delivered, 2) }}</td><td>{{ $dnItem->unit }}</td></tr>
+                                <tr class="{{ $dnItem->is_unavailable ? 'table-warning' : '' }}">
+                                    <td>{{ $i+1 }}</td>
+                                    <td>{{ $dnItem->item->name ?? '-' }}</td>
+                                    <td>
+                                        @if($dnItem->is_unavailable)
+                                            <span class="text-danger fw-semibold">0</span>
+                                        @else
+                                            {{ number_format($dnItem->quantity_delivered, 2) }}
+                                        @endif
+                                    </td>
+                                    <td>{{ $dnItem->unit }}</td>
+                                    <td>
+                                        @if($dnItem->is_unavailable)
+                                            <span class="badge bg-warning text-dark"><i class="bi bi-exclamation-triangle me-1"></i>Tidak Tersedia</span>
+                                            @if($dnItem->unavailable_reason)
+                                                <br><small class="text-muted">{{ $dnItem->unavailable_reason }}</small>
+                                            @endif
+                                        @else
+                                            <span class="badge bg-success">Terkirim</span>
+                                        @endif
+                                    </td>
+                                </tr>
                             @endforeach
                         </tbody>
                     </table>

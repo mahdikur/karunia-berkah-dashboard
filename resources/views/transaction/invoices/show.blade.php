@@ -9,10 +9,10 @@
             @if(in_array($invoice->status, ['unpaid','partial','overdue']))
                 <a href="{{ route('payments.create', ['invoice_id' => $invoice->id]) }}" class="btn btn-success"><i class="bi bi-cash me-1"></i>Catat Pembayaran</a>
             @endif
+            @if($invoice->status !== 'paid')
+                <a href="{{ route('invoices.edit', $invoice) }}" class="btn btn-outline-warning"><i class="bi bi-pencil me-1"></i>Edit</a>
+            @endif
             <a href="{{ route('invoices.print', $invoice) }}" target="_blank" class="btn btn-outline-secondary"><i class="bi bi-printer me-1"></i>Print</a>
-            {{-- @if($invoice->status !== 'paid' && $invoice->remaining_amount > 0)
-                <a href="{{ route('invoices.edit', $invoice) }}" class="btn btn-warning"><i class="bi bi-pencil me-1"></i>Edit</a>
-            @endif --}}
         </div>
     </div>
 

@@ -12,6 +12,7 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\ReturnNoteController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -50,6 +51,7 @@ Route::middleware('auth')->group(function () {
     // ===== SUPERADMIN + STAFF =====
     // Master Data (view by all, manage by superadmin)
     Route::resource('items', ItemController::class);
+    Route::post('api/items/quick-store', [ItemController::class, 'quickStore'])->name('api.items.quick-store');
     Route::resource('clients', ClientController::class);
 
     // Purchase Orders
@@ -58,22 +60,29 @@ Route::middleware('auth')->group(function () {
     Route::post('purchase-orders/{purchase_order}/reject', [PurchaseOrderController::class, 'reject'])->name('purchase-orders.reject')->middleware('role:superadmin');
     Route::post('purchase-orders/{purchase_order}/cancel', [PurchaseOrderController::class, 'cancel'])->name('purchase-orders.cancel');
     Route::post('purchase-orders/{purchase_order}/update-prices', [PurchaseOrderController::class, 'updatePrices'])->name('purchase-orders.update-prices');
+    Route::post('purchase-orders/{purchase_order}/set-modal', [PurchaseOrderController::class, 'setModal'])->name('purchase-orders.set-modal');
+    Route::post('purchase-orders/{purchase_order}/add-expense', [PurchaseOrderController::class, 'addExpense'])->name('purchase-orders.add-expense');
     Route::get('api/item-price', [PurchaseOrderController::class, 'getItemPrice'])->name('api.item-price');
 
     // Delivery Notes (Surat Jalan)
-    Route::resource('delivery-notes', DeliveryNoteController::class)->except(['edit', 'update']);
+    Route::resource('delivery-notes', DeliveryNoteController::class);
     Route::get('delivery-notes/{delivery_note}/print', [DeliveryNoteController::class, 'print'])->name('delivery-notes.print');
     Route::patch('delivery-notes/{delivery_note}/status', [DeliveryNoteController::class, 'updateStatus'])->name('delivery-notes.update-status');
 
+    // Return Notes (Retur)
+    Route::resource('return-notes', ReturnNoteController::class)->except(['edit', 'update']);
+    Route::patch('return-notes/{return_note}/status', [ReturnNoteController::class, 'updateStatus'])->name('return-notes.update-status');
+
     // Invoices
-    Route::resource('invoices', InvoiceController::class)->except(['edit', 'update']);
+    Route::get('invoices/batch/print', [InvoiceController::class, 'batchPrint'])->name('invoices.batch-print');
+    Route::resource('invoices', InvoiceController::class);
     Route::get('invoices/{invoice}/print', [InvoiceController::class, 'print'])->name('invoices.print');
 
     // Payments
     Route::resource('payments', PaymentController::class)->except(['edit', 'update', 'show']);
 
     // Modals (Capital)
-    Route::resource('modals', ModalController::class)->except(['edit', 'update']);
+    Route::resource('modals', ModalController::class);
 
     // Expenses
     Route::resource('expenses', ExpenseController::class)->except(['edit', 'update']);

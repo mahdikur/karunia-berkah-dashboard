@@ -659,6 +659,12 @@
                 </a>
             </li>
             <li class="nav-item">
+                <a href="{{ route('return-notes.index') }}" class="nav-link {{ request()->routeIs('return-notes.*') ? 'active' : '' }}">
+                    <i class="bi bi-arrow-return-left"></i>
+                    <span>Retur Barang</span>
+                </a>
+            </li>
+            <li class="nav-item">
                 <a href="{{ route('invoices.index') }}" class="nav-link {{ request()->routeIs('invoices.*') ? 'active' : '' }}">
                     <i class="bi bi-receipt-cutoff"></i>
                     <span>Invoice</span>

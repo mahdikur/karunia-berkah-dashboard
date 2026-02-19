@@ -5,7 +5,10 @@
             <h1>Invoice</h1>
             <nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li><li class="breadcrumb-item active">Invoice</li></ol></nav>
         </div>
-        <a href="{{ route('invoices.create') }}" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>Buat Invoice</a>
+        <div class="d-flex gap-2">
+            <a href="{{ route('invoices.batch-print') }}" target="_blank" class="btn btn-outline-secondary"><i class="bi bi-printer me-1"></i>Batch Print</a>
+            <a href="{{ route('invoices.create') }}" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>Buat Invoice</a>
+        </div>
     </div>
 
     <div class="card mb-3">
@@ -35,7 +38,7 @@
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover mb-0">
-                    <thead><tr><th>#</th><th>No. Invoice</th><th>Client</th><th>Tgl Invoice</th><th>Jatuh Tempo</th><th>Total</th><th>Sisa</th><th>Status</th><th>Aksi</th></tr></thead>
+                    <thead><tr><th>#</th><th>No. Invoice</th><th>Client</th><th>Tgl Invoice</th><th>Jatuh Tempo</th><th>Total</th><th>Sisa</th><th>Status</th><th width="120">Aksi</th></tr></thead>
                     <tbody>
                         @forelse($invoices as $inv)
                             <tr>
@@ -47,7 +50,15 @@
                                 <td>{{ \App\Helpers\FormatHelper::rupiah($inv->total_amount) }}</td>
                                 <td class="{{ $inv->remaining_amount > 0 ? 'text-danger' : '' }}">{{ \App\Helpers\FormatHelper::rupiah($inv->remaining_amount) }}</td>
                                 <td>{!! $inv->status_badge !!}</td>
-                                <td><a href="{{ route('invoices.show', $inv) }}" class="btn btn-sm btn-outline-info btn-action"><i class="bi bi-eye"></i></a></td>
+                                <td>
+                                    <div class="d-flex gap-1">
+                                        <a href="{{ route('invoices.show', $inv) }}" class="btn btn-sm btn-outline-info" title="Detail"><i class="bi bi-eye"></i></a>
+                                        @if($inv->status !== 'paid')
+                                        <a href="{{ route('invoices.edit', $inv) }}" class="btn btn-sm btn-outline-warning" title="Edit"><i class="bi bi-pencil"></i></a>
+                                        @endif
+                                        <a href="{{ route('invoices.print', $inv) }}" target="_blank" class="btn btn-sm btn-outline-secondary" title="Print"><i class="bi bi-printer"></i></a>
+                                    </div>
+                                </td>
                             </tr>
                         @empty
                             <tr><td colspan="9" class="text-center py-4 text-muted">Belum ada invoice.</td></tr>

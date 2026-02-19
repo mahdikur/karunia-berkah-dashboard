@@ -97,4 +97,39 @@ class ItemController extends Controller
         $item->delete();
         return redirect()->route('items.index')->with('success', 'Item berhasil dihapus.');
     }
+
+    /**
+     * Quick store via AJAX - for inline product creation from PO form
+     */
+    public function quickStore(Request $request)
+    {
+        $request->validate([
+            'category_id' => 'required|exists:categories,id',
+            'code' => 'required|string|max:50|unique:items',
+            'name' => 'required|string|max:255',
+            'unit' => 'required|string|max:50',
+        ]);
+
+        $item = Item::create([
+            'category_id' => $request->category_id,
+            'code' => $request->code,
+            'name' => $request->name,
+            'unit' => $request->unit,
+            'description' => $request->description,
+        ]);
+
+        $item->load('category');
+
+        return response()->json([
+            'success' => true,
+            'item' => [
+                'id' => $item->id,
+                'code' => $item->code,
+                'name' => $item->name,
+                'unit' => $item->unit,
+                'category' => $item->category ? $item->category->name : '-',
+            ],
+            'message' => 'Produk berhasil ditambahkan.',
+        ]);
+    }
 }

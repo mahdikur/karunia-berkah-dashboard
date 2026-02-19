@@ -42,10 +42,16 @@ class DeliveryNoteController extends Controller
             'notes' => 'nullable|string',
             'items' => 'required|array|min:1',
             'items.*.po_item_id' => 'required|exists:purchase_order_items,id',
-            'items.*.quantity_delivered' => 'required|numeric|min:0.01',
+            'items.*.quantity_delivered' => 'required|numeric|min:0',
         ]);
 
         $po = PurchaseOrder::findOrFail($request->purchase_order_id);
+
+        // Validate at least one item has qty > 0
+        $hasDeliveredItems = collect($request->items)->contains(fn($i) => ($i['quantity_delivered'] ?? 0) > 0);
+        if (!$hasDeliveredItems) {
+            return back()->withInput()->with('error', 'Minimal satu item harus memiliki jumlah kirim > 0.');
+        }
 
         $dn = DeliveryNote::create([
             'dn_number' => DeliveryNote::generateDnNumber(),
@@ -60,12 +66,20 @@ class DeliveryNoteController extends Controller
 
         foreach ($request->items as $item) {
             $poItem = $po->items()->findOrFail($item['po_item_id']);
+            $isUnavailable = isset($item['is_unavailable']) && $item['is_unavailable'];
+            $qty = $isUnavailable ? 0 : ($item['quantity_delivered'] ?? 0);
+
+            // Skip items with 0 quantity unless marked unavailable
+            if ($qty <= 0 && !$isUnavailable) continue;
+
             DeliveryNoteItem::create([
                 'delivery_note_id' => $dn->id,
                 'po_item_id' => $item['po_item_id'],
                 'item_id' => $poItem->item_id,
-                'quantity_delivered' => $item['quantity_delivered'],
+                'quantity_delivered' => $qty,
                 'unit' => $poItem->unit,
+                'is_unavailable' => $isUnavailable,
+                'unavailable_reason' => $item['unavailable_reason'] ?? null,
             ]);
         }
 
@@ -74,8 +88,69 @@ class DeliveryNoteController extends Controller
 
     public function show(DeliveryNote $deliveryNote)
     {
-        $deliveryNote->load('purchaseOrder', 'client', 'creator', 'items.item', 'items.poItem');
+        $deliveryNote->load('purchaseOrder', 'client', 'creator', 'items.item', 'items.poItem', 'returnNotes');
         return view('transaction.delivery-notes.show', compact('deliveryNote'));
+    }
+
+    public function edit(DeliveryNote $deliveryNote)
+    {
+        if ($deliveryNote->status === 'received') {
+            return back()->with('error', 'Surat Jalan yang sudah diterima tidak bisa diedit.');
+        }
+
+        $deliveryNote->load('purchaseOrder.items.item', 'items.poItem.item', 'client');
+        return view('transaction.delivery-notes.edit', compact('deliveryNote'));
+    }
+
+    public function update(Request $request, DeliveryNote $deliveryNote)
+    {
+        if ($deliveryNote->status === 'received') {
+            return back()->with('error', 'Surat Jalan yang sudah diterima tidak bisa diedit.');
+        }
+
+        $request->validate([
+            'dn_date' => 'required|date',
+            'delivery_type' => 'required|in:full,partial',
+            'notes' => 'nullable|string',
+            'items' => 'required|array|min:1',
+            'items.*.po_item_id' => 'required|exists:purchase_order_items,id',
+            'items.*.quantity_delivered' => 'required|numeric|min:0',
+        ]);
+
+        $hasDeliveredItems = collect($request->items)->contains(fn($i) => ($i['quantity_delivered'] ?? 0) > 0);
+        if (!$hasDeliveredItems) {
+            return back()->withInput()->with('error', 'Minimal satu item harus memiliki jumlah kirim > 0.');
+        }
+
+        $deliveryNote->update([
+            'dn_date' => $request->dn_date,
+            'delivery_type' => $request->delivery_type,
+            'notes' => $request->notes,
+        ]);
+
+        // Recreate items
+        $deliveryNote->items()->delete();
+        $po = $deliveryNote->purchaseOrder;
+
+        foreach ($request->items as $item) {
+            $poItem = $po->items()->findOrFail($item['po_item_id']);
+            $isUnavailable = isset($item['is_unavailable']) && $item['is_unavailable'];
+            $qty = $isUnavailable ? 0 : ($item['quantity_delivered'] ?? 0);
+
+            if ($qty <= 0 && !$isUnavailable) continue;
+
+            DeliveryNoteItem::create([
+                'delivery_note_id' => $deliveryNote->id,
+                'po_item_id' => $item['po_item_id'],
+                'item_id' => $poItem->item_id,
+                'quantity_delivered' => $qty,
+                'unit' => $poItem->unit,
+                'is_unavailable' => $isUnavailable,
+                'unavailable_reason' => $item['unavailable_reason'] ?? null,
+            ]);
+        }
+
+        return redirect()->route('delivery-notes.show', $deliveryNote)->with('success', 'Surat Jalan berhasil diperbarui.');
     }
 
     public function print(DeliveryNote $deliveryNote)

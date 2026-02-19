@@ -9,6 +9,7 @@ class Expense extends Model
     protected $fillable = [
         'expense_number', 'category', 'amount',
         'expense_date', 'description', 'receipt_file', 'created_by',
+        'purchase_order_id',
     ];
 
     protected function casts(): array
@@ -22,6 +23,11 @@ class Expense extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function purchaseOrder()
+    {
+        return $this->belongsTo(PurchaseOrder::class);
     }
 
     public static function generateExpenseNumber()

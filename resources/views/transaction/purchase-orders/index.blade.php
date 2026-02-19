@@ -40,7 +40,7 @@
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover mb-0">
-                    <thead><tr><th width="50">#</th><th>No. PO</th><th>Client</th><th>Tgl PO</th><th>Status</th><th>Dibuat</th><th width="80">Aksi</th></tr></thead>
+                    <thead><tr><th width="50">#</th><th>No. PO</th><th>Client</th><th>Tgl PO</th><th>Status</th><th>Dibuat</th><th width="160">Aksi</th></tr></thead>
                     <tbody>
                         @forelse($purchaseOrders as $po)
                             <tr>
@@ -53,6 +53,7 @@
                                 <td>
                                     <div class="d-flex gap-1">
                                         <a href="{{ route('purchase-orders.show', $po) }}" class="btn btn-sm btn-outline-info" title="Detail"><i class="bi bi-eye"></i></a>
+                                        <a href="{{ route('purchase-orders.edit', $po) }}" class="btn btn-sm btn-outline-warning" title="Edit"><i class="bi bi-pencil"></i></a>
                                         <a href="{{ route('delivery-notes.index', ['search' => $po->po_number]) }}" class="btn btn-sm btn-outline-secondary" title="List Surat Jalan"><i class="bi bi-truck"></i></a>
                                         <a href="{{ route('invoices.index', ['search' => $po->po_number]) }}" class="btn btn-sm btn-outline-success" title="List Invoice"><i class="bi bi-receipt"></i></a>
                                     </div>

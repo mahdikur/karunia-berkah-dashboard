@@ -13,6 +13,7 @@ class PurchaseOrder extends Model
         'po_number', 'client_id', 'created_by', 'approved_by',
         'po_date', 'delivery_date', 'approved_at',
         'status', 'notes', 'rejected_reason', 'cancelled_reason',
+        'last_edited_at',
     ];
 
     protected function casts(): array
@@ -21,6 +22,7 @@ class PurchaseOrder extends Model
             'po_date' => 'date',
             'delivery_date' => 'date',
             'approved_at' => 'datetime',
+            'last_edited_at' => 'datetime',
         ];
     }
 
@@ -57,6 +59,16 @@ class PurchaseOrder extends Model
     public function modalAllocations()
     {
         return $this->hasMany(ModalAllocation::class);
+    }
+
+    public function returnNotes()
+    {
+        return $this->hasMany(ReturnNote::class);
+    }
+
+    public function expenses()
+    {
+        return $this->hasMany(Expense::class);
     }
 
     public function getTotalSellingAttribute()

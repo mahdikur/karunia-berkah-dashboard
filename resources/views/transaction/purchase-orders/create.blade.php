@@ -42,9 +42,12 @@
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <span>Daftar Item</span>
-                        <button type="button" class="btn btn-sm btn-outline-primary" id="addItem">
-                            <i class="bi bi-plus me-1"></i>Tambah Item
-                        </button>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#quickProductModal"><i class="bi bi-box-seam me-1"></i>Produk Baru</button>
+                            <button type="button" class="btn btn-sm btn-outline-primary" id="addItem">
+                                <i class="bi bi-plus me-1"></i>Tambah Item
+                            </button>
+                        </div>
                     </div>
                     <div class="card-body p-0">
                         <div class="table-responsive">
@@ -109,10 +112,51 @@
         </div>
     </form>
 
+    {{-- Quick Product Add Modal --}}
+    <div class="modal fade" id="quickProductModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Tambah Produk Baru</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="quickProductAlert"></div>
+                    <div class="mb-3">
+                        <label class="form-label">Kategori <span class="text-danger">*</span></label>
+                        <select class="form-select" id="qp_category_id" required>
+                            <option value="">Pilih Kategori</option>
+                            @php $categories = \App\Models\Category::active()->orderBy('name')->get(); @endphp
+                            @foreach($categories as $cat)
+                            <option value="{{ $cat->id }}">{{ $cat->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Kode Produk <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="qp_code" placeholder="Contoh: PRD001">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nama Produk <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="qp_name" placeholder="Nama produk">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Satuan <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="qp_unit" placeholder="kg, pcs, dus, dll">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-primary" id="saveQuickProduct"><i class="bi bi-check-lg me-1"></i>Simpan & Tambah</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     @push('scripts')
     <script>
         let itemIndex = 1;
-        const items = @json($items);
+        let items = @json($items);
 
         function formatRupiah(num) {
             return 'Rp ' + new Intl.NumberFormat('id-ID').format(num);
@@ -184,6 +228,64 @@
 
                 attachRowEvents(row);
                 itemIndex++;
+            });
+
+            // Quick Product Save
+            document.getElementById('saveQuickProduct')?.addEventListener('click', function() {
+                const alertDiv = document.getElementById('quickProductAlert');
+                alertDiv.innerHTML = '';
+
+                const data = {
+                    category_id: document.getElementById('qp_category_id').value,
+                    code: document.getElementById('qp_code').value,
+                    name: document.getElementById('qp_name').value,
+                    unit: document.getElementById('qp_unit').value,
+                };
+
+                if (!data.category_id || !data.code || !data.name || !data.unit) {
+                    alertDiv.innerHTML = '<div class="alert alert-danger py-2 small">Semua field wajib diisi.</div>';
+                    return;
+                }
+
+                fetch('{{ route("api.items.quick-store") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(r => r.json())
+                .then(result => {
+                    if (result.success) {
+                        items.push({id: result.item.id, code: result.item.code, name: result.item.name, unit: result.item.unit});
+                        
+                        document.querySelectorAll('.item-select').forEach(sel => {
+                            const newOption = document.createElement('option');
+                            newOption.value = result.item.id;
+                            newOption.dataset.unit = result.item.unit;
+                            newOption.textContent = `${result.item.code} - ${result.item.name}`;
+                            sel.appendChild(newOption);
+                        });
+
+                        bootstrap.Modal.getInstance(document.getElementById('quickProductModal')).hide();
+                        document.getElementById('qp_category_id').value = '';
+                        document.getElementById('qp_code').value = '';
+                        document.getElementById('qp_name').value = '';
+                        document.getElementById('qp_unit').value = '';
+
+                        Swal.fire({icon: 'success', title: 'Berhasil!', text: result.message, timer: 2000, showConfirmButton: false});
+                    } else if (result.errors) {
+                        let errHtml = '<div class="alert alert-danger py-2 small">';
+                        Object.values(result.errors).forEach(msgs => msgs.forEach(m => errHtml += m + '<br>'));
+                        errHtml += '</div>';
+                        alertDiv.innerHTML = errHtml;
+                    }
+                })
+                .catch(err => {
+                    alertDiv.innerHTML = '<div class="alert alert-danger py-2 small">Terjadi error. Silakan coba lagi.</div>';
+                });
             });
 
             function attachRowEvents(row) {

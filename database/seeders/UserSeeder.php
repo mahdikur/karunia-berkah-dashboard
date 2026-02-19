@@ -33,9 +33,9 @@ class UserSeeder extends Seeder
 
         // Additional Staff
         User::create([
-            'name' => 'Budi Staff',
-            'email' => 'budi@gmail.com',
-            'password' => Hash::make('budi'),
+            'name' => 'Kelief Mahdi',
+            'email' => 'kalief@gmail.com',
+            'password' => Hash::make('kalief'),
             'role' => 'staff',
             'is_active' => true,
         ]);

@@ -22,7 +22,7 @@
         .table td { border: 1px solid #ccc; padding: 4px 5px; }
         .footer { margin-top: 30px; display: flex; justify-content: space-between; text-align: center; font-size: 11px; }
         .signature-box { width: 150px; }
-        .signature-line { margin-top: 40px; border-top: 1px solid #000; }
+        .signature-line { margin-top: 65px; border-top: 1px solid #000; }
         .special-instruction { border: 1px dashed #2e7d32; padding: 8px; margin-bottom: 20px; font-size: 11px; background: #e8f5e9; }
         @media print {
             body { margin: 0; padding: 0; }
@@ -103,11 +103,11 @@
         <div class="footer">
             <div class="signature-box">
                 <p>Penerima</p>
-                <div class="signature-line">Nama & Stempel</div>
+                <div class="signature-line">( .................... )</div>
             </div>
             <div class="signature-box">
                 <p>Pengirim</p>
-                <div class="signature-line">Bagian Logistik</div>
+                <div class="signature-line">( .................... )</div>
             </div>
             <div class="signature-box">
                 <p>Hormat Kami</p>

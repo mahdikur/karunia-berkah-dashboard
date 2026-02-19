@@ -140,7 +140,7 @@
                 
                 <div class="signature-area" style="width: 40%; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; margin-top: 0;">
                     <div class="signature-box">
-                        <p style="margin-bottom: 60px;">Hormat Kami,</p>
+                        <p style="margin-bottom: 80px;">Hormat Kami,</p>
                         <div class="signature-line">Finance KB Supplier</div>
                     </div>
                 </div>

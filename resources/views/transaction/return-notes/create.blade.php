@@ -66,13 +66,15 @@
                 <div class="card">
                     <div class="card-header">Item yang Diretur</div>
                     <div class="card-body p-0">
+                        <div class="table-responsive" style="max-height: 380px; overflow-y: auto;">
                         <table class="table mb-0">
-                            <thead><tr><th>Item</th><th>Qty Terkirim</th><th>Qty Retur</th><th>Satuan</th><th>Alasan</th></tr></thead>
+                            <thead class="sticky-top bg-white" style="z-index:2;"><tr><th width="40">#</th><th>Item</th><th>Qty Terkirim</th><th>Qty Retur</th><th>Satuan</th><th>Alasan</th></tr></thead>
                             <tbody id="returnItemsBody">
                                 @if($selectedDn)
                                     @foreach($selectedDn->items as $i => $dnItem)
                                         @if(!$dnItem->is_unavailable)
                                         <tr>
+                                            <td class="text-muted">{{ $i + 1 }}</td>
                                             <td>
                                                 {{ $dnItem->item->name }}
                                                 <input type="hidden" name="items[{{ $i }}][delivery_note_item_id]" value="{{ $dnItem->id }}">
@@ -89,10 +91,11 @@
                                         @endif
                                     @endforeach
                                 @else
-                                    <tr><td colspan="5" class="text-center py-3 text-muted">Pilih Surat Jalan terlebih dahulu</td></tr>
+                                    <tr><td colspan="6" class="text-center py-3 text-muted">Pilih Surat Jalan terlebih dahulu</td></tr>
                                 @endif
                             </tbody>
                         </table>
+                        </div>
                     </div>
                 </div>
                 <div class="mt-3 d-flex gap-2">
@@ -113,7 +116,7 @@
             if (!opt || !select.value) {
                 document.getElementById('clientName').value = '';
                 document.getElementById('poNumber').value = '';
-                body.innerHTML = '<tr><td colspan="5" class="text-center py-3 text-muted">Pilih Surat Jalan terlebih dahulu</td></tr>';
+                body.innerHTML = '<tr><td colspan="6" class="text-center py-3 text-muted">Pilih Surat Jalan terlebih dahulu</td></tr>';
                 return;
             }
 
@@ -122,12 +125,13 @@
 
             const items = JSON.parse(opt.dataset.items || '[]').filter(it => !it.is_unavailable);
             if (items.length === 0) {
-                body.innerHTML = '<tr><td colspan="5" class="text-center py-3 text-muted">Tidak ada item yang bisa diretur dari SJ ini.</td></tr>';
+                body.innerHTML = '<tr><td colspan="6" class="text-center py-3 text-muted">Tidak ada item yang bisa diretur dari SJ ini.</td></tr>';
                 return;
             }
 
             body.innerHTML = items.map((it, i) => `
                 <tr>
+                    <td class="text-muted">${i + 1}</td>
                     <td>${it.name}<input type="hidden" name="items[${i}][delivery_note_item_id]" value="${it.id}"></td>
                     <td>${parseFloat(it.qty).toFixed(2)}</td>
                     <td><input type="number" class="form-control form-control-sm" name="items[${i}][quantity_returned]" value="0" min="0" max="${it.qty}" step="0.01"></td>

@@ -12,10 +12,16 @@
     <div class="card mb-3">
         <div class="card-body py-2">
             <form method="GET" class="row g-2 align-items-end">
-                <div class="col-md-4">
+                <div class="col-md-2">
                     <input type="text" class="form-control form-control-sm" name="search" value="{{ request('search') }}" placeholder="Cari no. retur...">
                 </div>
                 <div class="col-md-3">
+                    <select class="form-select form-select-sm select2-filter" name="client_id" id="filterClient">
+                        <option value="">Semua Client</option>
+                        @foreach($clients as $c)<option value="{{ $c->id }}" {{ request('client_id') == $c->id ? 'selected' : '' }}>{{ $c->name }}</option>@endforeach
+                    </select>
+                </div>
+                <div class="col-md-2">
                     <select class="form-select form-select-sm" name="status">
                         <option value="">Semua Status</option>
                         <option value="draft" {{ request('status') === 'draft' ? 'selected' : '' }}>Draft</option>
@@ -24,16 +30,27 @@
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <button type="submit" class="btn btn-sm btn-primary w-100"><i class="bi bi-search me-1"></i>Filter</button>
+                    <input type="date" class="form-control form-control-sm" name="date_from" value="{{ request('date_from', $dateFrom) }}">
                 </div>
-                @if(request()->hasAny(['search', 'status']))
                 <div class="col-md-2">
-                    <a href="{{ route('return-notes.index') }}" class="btn btn-sm btn-outline-secondary w-100">Reset</a>
+                    <input type="date" class="form-control form-control-sm" name="date_to" value="{{ request('date_to', $dateTo) }}">
                 </div>
-                @endif
+                <div class="col-md-1">
+                    <button type="submit" class="btn btn-sm btn-primary w-100"><i class="bi bi-search"></i></button>
+                </div>
             </form>
         </div>
     </div>
+
+    @push('scripts')
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof $ !== 'undefined') {
+            $('#filterClient').select2({ theme: 'bootstrap-5', width: '100%', placeholder: 'Semua Client', allowClear: true });
+        }
+    });
+    </script>
+    @endpush
 
     <div class="card">
         <div class="card-body p-0">

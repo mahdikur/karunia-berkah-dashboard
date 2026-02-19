@@ -54,18 +54,23 @@
                             <th>Nama</th>
                             <th>Kategori</th>
                             <th>Satuan</th>
+                            <th>Harga Terakhir</th>
+                            <th>Diperbarui</th>
                             <th>Status</th>
                             <th width="140">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($items as $item)
+                            @php $lastPrice = $item->priceHistories->first(); @endphp
                             <tr>
                                 <td>{{ $loop->iteration + ($items->currentPage() - 1) * $items->perPage() }}</td>
                                 <td><code>{{ $item->code }}</code></td>
                                 <td class="fw-semibold">{{ $item->name }}</td>
                                 <td><span class="badge bg-light text-dark">{{ $item->category->name }}</span></td>
                                 <td>{{ $item->unit }}</td>
+                                <td class="fw-semibold">{{ $lastPrice ? \App\Helpers\FormatHelper::rupiah($lastPrice->selling_price) : '-' }}</td>
+                                <td class="text-muted" style="font-size:12px;">{{ $lastPrice ? $lastPrice->changed_at->diffForHumans() : '-' }}</td>
                                 <td>
                                     @if($item->is_active)
                                         <span class="badge bg-success">Aktif</span>
@@ -83,7 +88,7 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="7" class="text-center py-4 text-muted">Belum ada item.</td></tr>
+                            <tr><td colspan="9" class="text-center py-4 text-muted">Belum ada item.</td></tr>
                         @endforelse
                     </tbody>
                 </table>

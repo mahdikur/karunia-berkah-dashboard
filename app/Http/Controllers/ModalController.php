@@ -11,12 +11,18 @@ class ModalController extends Controller
 {
     public function index(Request $request)
     {
+        // Default date range: past 1 month
+        $dateFrom = $request->date_from ?? now()->subMonth()->format('Y-m-d');
+        $dateTo   = $request->date_to   ?? now()->format('Y-m-d');
+
         $modals = Modal::with('creator', 'allocations.purchaseOrder')
             ->when($request->search, fn($q, $s) => $q->where('modal_number', 'like', "%{$s}%"))
+            ->where('modal_date', '>=', $dateFrom)
+            ->where('modal_date', '<=', $dateTo)
             ->latest()
             ->paginate(25);
 
-        return view('transaction.modals.index', compact('modals'));
+        return view('transaction.modals.index', compact('modals', 'dateFrom', 'dateTo'));
     }
 
     public function create()

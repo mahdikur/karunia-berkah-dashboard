@@ -11,7 +11,7 @@ class ItemController extends Controller
 {
     public function index(Request $request)
     {
-        $items = Item::with('category')
+        $items = Item::with(['category', 'priceHistories' => fn($q) => $q->latest('changed_at')->limit(5)])
             ->when($request->search, fn($q, $s) => $q->where('name', 'like', "%{$s}%")->orWhere('code', 'like', "%{$s}%"))
             ->when($request->category_id, fn($q, $c) => $q->where('category_id', $c))
             ->when($request->status === 'active', fn($q) => $q->where('is_active', true))

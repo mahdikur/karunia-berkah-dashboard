@@ -10,15 +10,22 @@ class PaymentController extends Controller
 {
     public function index(Request $request)
     {
+        // Default date range: past 1 month
+        $dateFrom = $request->date_from ?? now()->subMonth()->format('Y-m-d');
+        $dateTo   = $request->date_to   ?? now()->format('Y-m-d');
+
         $payments = Payment::with('invoice.client', 'creator')
             ->when($request->search, fn($q, $s) => $q->whereHas('invoice', fn($iq) => $iq->where('invoice_number', 'like', "%{$s}%")))
+            ->when($request->client_id, fn($q, $c) => $q->whereHas('invoice', fn($iq) => $iq->where('client_id', $c)))
             ->when($request->payment_method, fn($q, $m) => $q->where('payment_method', $m))
-            ->when($request->date_from, fn($q, $d) => $q->where('payment_date', '>=', $d))
-            ->when($request->date_to, fn($q, $d) => $q->where('payment_date', '<=', $d))
+            ->where('payment_date', '>=', $dateFrom)
+            ->where('payment_date', '<=', $dateTo)
             ->latest()
             ->paginate(25);
 
-        return view('transaction.payments.index', compact('payments'));
+        $clients = \App\Models\Client::active()->orderBy('name')->get();
+
+        return view('transaction.payments.index', compact('payments', 'clients', 'dateFrom', 'dateTo'));
     }
 
     public function create(Request $request)

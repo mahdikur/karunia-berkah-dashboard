@@ -13,18 +13,22 @@ class InvoiceController extends Controller
 {
     public function index(Request $request)
     {
+        // Default date range: past 1 month
+        $dateFrom = $request->date_from ?? now()->subMonth()->format('Y-m-d');
+        $dateTo   = $request->date_to   ?? now()->format('Y-m-d');
+
         $invoices = Invoice::with('client', 'creator')
             ->when($request->search, fn($q, $s) => $q->where(fn($wq) => $wq->where('invoice_number', 'like', "%{$s}%")->orWhereHas('purchaseOrder', fn($pq) => $pq->where('po_number', 'like', "%{$s}%"))))
             ->when($request->status, fn($q, $s) => $q->where('status', $s))
             ->when($request->client_id, fn($q, $c) => $q->where('client_id', $c))
-            ->when($request->date_from, fn($q, $d) => $q->where('invoice_date', '>=', $d))
-            ->when($request->date_to, fn($q, $d) => $q->where('invoice_date', '<=', $d))
+            ->where('invoice_date', '>=', $dateFrom)
+            ->where('invoice_date', '<=', $dateTo)
             ->latest()
             ->paginate(25);
 
         $clients = Client::active()->orderBy('name')->get();
 
-        return view('transaction.invoices.index', compact('invoices', 'clients'));
+        return view('transaction.invoices.index', compact('invoices', 'clients', 'dateFrom', 'dateTo'));
     }
 
     public function create(Request $request)

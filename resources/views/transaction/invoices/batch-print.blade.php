@@ -100,7 +100,7 @@
                     <td class="text-center">{{ $index + 1 }}</td>
                     <td><strong>{{ $invoice->invoice_number }}</strong></td>
                     <td>{{ $invoice->purchaseOrder->po_number ?? '-' }}</td>
-                    <td class="text-center">{{ number_format($invoice->purchaseOrder->items->sum('quantity'), 0) }}</td>
+                    <td class="text-center">{{ $invoice->purchaseOrder->items->count() }}</td>
                     <td class="text-center">{{ $invoice->purchaseOrder->po_date ? $invoice->purchaseOrder->po_date->format('d/m/Y') : '-' }}</td>
                     <td class="text-right">{{ number_format($invoice->total_amount, 0, ',', '.') }}</td>
                     <td class="text-right">{{ $invoice->batch_discount > 0 ? number_format($invoice->batch_discount, 0, ',', '.') : '-' }}</td>

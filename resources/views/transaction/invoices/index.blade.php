@@ -14,7 +14,13 @@
     <div class="card mb-3">
         <div class="card-body py-3">
             <form method="GET" class="row g-2 align-items-end">
-                <div class="col-md-3"><input type="text" class="form-control" name="search" value="{{ request('search') }}" placeholder="No. Invoice..."></div>
+                <div class="col-md-2"><input type="text" class="form-control" name="search" value="{{ request('search') }}" placeholder="No. Invoice..."></div>
+                <div class="col-md-3">
+                    <select class="form-select select2-filter" name="client_id" id="filterClient">
+                        <option value="">Semua Client</option>
+                        @foreach($clients as $c)<option value="{{ $c->id }}" {{ request('client_id') == $c->id ? 'selected' : '' }}>{{ $c->name }}</option>@endforeach
+                    </select>
+                </div>
                 <div class="col-md-2">
                     <select class="form-select" name="status">
                         <option value="">Semua Status</option>
@@ -23,16 +29,26 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="col-md-3">
-                    <select class="form-select" name="client_id">
-                        <option value="">Semua Client</option>
-                        @foreach($clients as $c)<option value="{{ $c->id }}" {{ request('client_id') == $c->id ? 'selected' : '' }}>{{ $c->name }}</option>@endforeach
-                    </select>
+                <div class="col-md-2">
+                    <input type="date" class="form-control" name="date_from" value="{{ request('date_from', $dateFrom) }}">
                 </div>
-                <div class="col-md-2"><button type="submit" class="btn btn-primary w-100"><i class="bi bi-search me-1"></i>Filter</button></div>
+                <div class="col-md-2">
+                    <input type="date" class="form-control" name="date_to" value="{{ request('date_to', $dateTo) }}">
+                </div>
+                <div class="col-md-1"><button type="submit" class="btn btn-primary w-100"><i class="bi bi-search"></i></button></div>
             </form>
         </div>
     </div>
+
+    @push('scripts')
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof $ !== 'undefined') {
+            $('#filterClient').select2({ theme: 'bootstrap-5', width: '100%', placeholder: 'Semua Client', allowClear: true });
+        }
+    });
+    </script>
+    @endpush
 
     <div class="card">
         <div class="card-body p-0">
@@ -46,7 +62,12 @@
                                 <td><a href="{{ route('invoices.show', $inv) }}" class="fw-semibold">{{ $inv->invoice_number }}</a></td>
                                 <td>{{ $inv->client->name }}</td>
                                 <td>{{ $inv->invoice_date->format('d/m/Y') }}</td>
-                                <td>{{ $inv->due_date->format('d/m/Y') }}</td>
+                                <td>
+                                    {{ $inv->due_date->format('d/m/Y') }}
+                                    @if(in_array($inv->status, ['unpaid','partial']) && $inv->due_date->isPast())
+                                        <span class="badge bg-danger ms-1" title="Sudah jatuh tempo!">Jatuh Tempo</span>
+                                    @endif
+                                </td>
                                 <td>{{ \App\Helpers\FormatHelper::rupiah($inv->total_amount) }}</td>
                                 <td class="{{ $inv->remaining_amount > 0 ? 'text-danger' : '' }}">{{ \App\Helpers\FormatHelper::rupiah($inv->remaining_amount) }}</td>
                                 <td>{!! $inv->status_badge !!}</td>

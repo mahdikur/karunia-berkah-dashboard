@@ -4,6 +4,34 @@
         <div><h1>Pengeluaran</h1><nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li><li class="breadcrumb-item active">Pengeluaran</li></ol></nav></div>
         <a href="{{ route('expenses.create') }}" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>Catat Pengeluaran</a>
     </div>
+    {{-- Filters --}}
+    <div class="card mb-3">
+        <div class="card-body py-2">
+            <form method="GET" class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <input type="text" class="form-control form-control-sm" name="search" value="{{ request('search') }}" placeholder="Cari deskripsi / no...">
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select form-select-sm" name="category">
+                        <option value="">Semua Kategori</option>
+                        @foreach($categories as $cat)
+                            <option value="{{ $cat }}" {{ request('category') === $cat ? 'selected' : '' }}>{{ $cat }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <input type="date" class="form-control form-control-sm" name="date_from" value="{{ request('date_from', $dateFrom) }}">
+                </div>
+                <div class="col-md-2">
+                    <input type="date" class="form-control form-control-sm" name="date_to" value="{{ request('date_to', $dateTo) }}">
+                </div>
+                <div class="col-md-1">
+                    <button type="submit" class="btn btn-sm btn-primary w-100"><i class="bi bi-search"></i></button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div class="card"><div class="card-body p-0"><div class="table-responsive">
         <table class="table table-hover mb-0">
             <thead><tr><th>#</th><th>No.</th><th>Kategori</th><th>Deskripsi</th><th>Jumlah</th><th>Tanggal</th><th>Aksi</th></tr></thead>

@@ -10,15 +10,22 @@ class ExpenseController extends Controller
 {
     public function index(Request $request)
     {
+        // Default date range: past 1 month
+        $dateFrom = $request->date_from ?? now()->subMonth()->format('Y-m-d');
+        $dateTo   = $request->date_to   ?? now()->format('Y-m-d');
+
         $expenses = Expense::with('creator')
             ->when($request->search, fn($q, $s) => $q->where('description', 'like', "%{$s}%")->orWhere('expense_number', 'like', "%{$s}%"))
             ->when($request->category, fn($q, $c) => $q->where('category', $c))
-            ->when($request->date_from, fn($q, $d) => $q->where('expense_date', '>=', $d))
-            ->when($request->date_to, fn($q, $d) => $q->where('expense_date', '<=', $d))
+            ->where('expense_date', '>=', $dateFrom)
+            ->where('expense_date', '<=', $dateTo)
             ->latest()
             ->paginate(25);
 
-        return view('transaction.expenses.index', compact('expenses'));
+        // Get distinct categories for filter
+        $categories = Expense::distinct()->orderBy('category')->pluck('category');
+
+        return view('transaction.expenses.index', compact('expenses', 'categories', 'dateFrom', 'dateTo'));
     }
 
     public function create()

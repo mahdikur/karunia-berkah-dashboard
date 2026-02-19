@@ -50,10 +50,11 @@
                         </div>
                     </div>
                     <div class="card-body p-0">
-                        <div class="table-responsive">
+                        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
                             <table class="table mb-0" id="itemsTable">
-                                <thead>
+                                <thead class="sticky-top bg-white" style="z-index:2;">
                                     <tr>
+                                        <th width="40">#</th>
                                         <th>Item</th>
                                         <th width="100">Qty</th>
                                         <th width="80">Satuan</th>
@@ -65,6 +66,7 @@
                                 </thead>
                                 <tbody id="itemsBody">
                                     <tr class="item-row" data-index="0">
+                                        <td class="row-num text-muted">1</td>
                                         <td>
                                             <select class="form-select form-select-sm item-select select2" name="items[0][item_id]" required>
                                                 <option value="">Pilih Item</option>
@@ -83,17 +85,17 @@
                                 </tbody>
                                 <tfoot>
                                     <tr class="table-light">
-                                        <td colspan="5" class="text-end fw-bold">Total (Beli):</td>
+                                        <td colspan="6" class="text-end fw-bold">Total (Beli):</td>
                                         <td class="fw-bold text-muted" id="totalPurchase">Rp 0</td>
                                         <td></td>
                                     </tr>
                                     <tr class="table-light">
-                                        <td colspan="5" class="text-end fw-bold">Total (Jual):</td>
+                                        <td colspan="6" class="text-end fw-bold">Total (Jual):</td>
                                         <td class="fw-bold" id="grandTotal">Rp 0</td>
                                         <td></td>
                                     </tr>
                                     <tr class="table-success">
-                                        <td colspan="5" class="text-end fw-bold">Estimasi Profit:</td>
+                                        <td colspan="6" class="text-end fw-bold">Estimasi Profit:</td>
                                         <td class="fw-bold" id="profitEstimate">Rp 0</td>
                                         <td></td>
                                     </tr>
@@ -211,8 +213,7 @@
                 const row = document.createElement('tr');
                 row.className = 'item-row';
                 row.dataset.index = itemIndex;
-                row.innerHTML = `
-                    <td><select class="form-select form-select-sm item-select select2" name="items[${itemIndex}][item_id]" required>${buildItemOptions()}</select></td>
+                row.innerHTML = `                    <td class="row-num text-muted">${document.querySelectorAll('.item-row').length + 1}</td>                    <td><select class="form-select form-select-sm item-select select2" name="items[${itemIndex}][item_id]" required>${buildItemOptions()}</select></td>
                     <td><input type="number" class="form-control form-control-sm qty-input" name="items[${itemIndex}][quantity]" min="0.01" step="0.01" value="1" required></td>
                     <td><input type="text" class="form-control form-control-sm unit-input" name="items[${itemIndex}][unit]" required></td>
                     <td><input type="number" class="form-control form-control-sm purchase-price-input" name="items[${itemIndex}][purchase_price]" min="0" step="1" value="0"></td>
@@ -333,7 +334,15 @@
                         }
                         row.remove();
                         calculateTotals();
+                        renumberRows();
                     }
+                });
+            }
+
+            function renumberRows() {
+                document.querySelectorAll('.item-row').forEach((r, i) => {
+                    const num = r.querySelector('.row-num');
+                    if (num) num.textContent = i + 1;
                 });
             }
         });

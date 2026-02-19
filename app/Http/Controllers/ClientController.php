@@ -10,7 +10,9 @@ class ClientController extends Controller
 {
     public function index(Request $request)
     {
-        $clients = Client::query()
+        $clients = Client::withCount(['purchaseOrders as total_po'])
+            ->withCount(['purchaseOrders as total_po_unpaid' => fn($q) => $q->whereNotIn('status', ['completed', 'cancelled'])])
+            ->with(['invoices' => fn($q) => $q->whereIn('status', ['unpaid', 'partial', 'overdue'])])
             ->when($request->search, fn($q, $s) => $q->where('name', 'like', "%{$s}%")->orWhere('code', 'like', "%{$s}%"))
             ->when($request->status === 'active', fn($q) => $q->where('is_active', true))
             ->when($request->status === 'inactive', fn($q) => $q->where('is_active', false))

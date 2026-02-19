@@ -11,14 +11,23 @@ class DeliveryNoteController extends Controller
 {
     public function index(Request $request)
     {
+        // Default date range: past 1 week
+        $dateFrom = $request->date_from ?? now()->subWeek()->format('Y-m-d');
+        $dateTo   = $request->date_to   ?? now()->format('Y-m-d');
+
         $deliveryNotes = DeliveryNote::with('purchaseOrder', 'client', 'creator')
             ->when($request->search, fn($q, $s) => $q->where(fn($wq) => $wq->where('dn_number', 'like', "%{$s}%")->orWhereHas('purchaseOrder', fn($pq) => $pq->where('po_number', 'like', "%{$s}%"))))
             ->when($request->client_id, fn($q, $c) => $q->where('client_id', $c))
+            ->when($request->delivery_type, fn($q, $t) => $q->where('delivery_type', $t))
             ->when($request->status, fn($q, $s) => $q->where('status', $s))
+            ->where('dn_date', '>=', $dateFrom)
+            ->where('dn_date', '<=', $dateTo)
             ->latest()
             ->paginate(25);
 
-        return view('transaction.delivery-notes.index', compact('deliveryNotes'));
+        $clients = \App\Models\Client::active()->orderBy('name')->get();
+
+        return view('transaction.delivery-notes.index', compact('deliveryNotes', 'clients', 'dateFrom', 'dateTo'));
     }
 
     public function create(Request $request)

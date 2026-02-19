@@ -75,6 +75,7 @@
                     <th style="width: 50px; text-align: center;">No</th>
                     <th>Deskripsi</th>
                     <th style="width: 80px; text-align: right;">Qty</th>
+                    <th style="width: 55px; text-align: center;">Satuan</th>
                     <th style="width: 120px; text-align: right;">Harga Satuan</th>
                     <th style="width: 120px; text-align: right;">Total</th>
                 </tr>
@@ -85,6 +86,7 @@
                     <td style="text-align: center;">{{ $index + 1 }}</td>
                     <td>{{ $item->item->name }}</td>
                     <td style="text-align: right;">{{ number_format($item->quantity, 2) }}</td>
+                    <td style="text-align: center;">{{ $item->unit ?? $item->item->unit }}</td>
                     <td style="text-align: right;">{{ number_format($item->unit_price, 0, ',', '.') }}</td>
                     <td style="text-align: right;">{{ number_format($item->subtotal, 0, ',', '.') }}</td>
                 </tr>
@@ -92,23 +94,23 @@
             </tbody>
             <tfoot>
                 <tr>
-                    <td colspan="4" class="text-right"><strong>Subtotal</strong></td>
+                    <td colspan="5" class="text-right"><strong>Subtotal</strong></td>
                     <td class="text-right">{{ number_format($invoice->subtotal, 0, ',', '.') }}</td>
                 </tr>
                 @if($invoice->discount_amount > 0)
                 <tr>
-                    <td colspan="4" class="text-right">Diskon</td>
+                    <td colspan="5" class="text-right">Diskon</td>
                     <td class="text-right">-{{ number_format($invoice->discount_amount, 0, ',', '.') }}</td>
                 </tr>
                 @endif
                 @if($invoice->tax_amount > 0)
                 <tr>
-                    <td colspan="4" class="text-right">Pajak ({{ $invoice->tax_percentage }}%)</td>
+                    <td colspan="5" class="text-right">Pajak ({{ $invoice->tax_percentage }}%)</td>
                     <td class="text-right">{{ number_format($invoice->tax_amount, 0, ',', '.') }}</td>
                 </tr>
                 @endif
                 <tr>
-                    <td colspan="4" class="text-right"><strong>Total Tagihan</strong></td>
+                    <td colspan="5" class="text-right"><strong>Total Tagihan</strong></td>
                     <td class="text-right" style="border-top: 2px solid #000;"><strong>Rp {{ number_format($invoice->total_amount, 0, ',', '.') }}</strong></td>
                 </tr>
             </tfoot>

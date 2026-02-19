@@ -16,12 +16,16 @@ class PurchaseOrderController extends Controller
 {
     public function index(Request $request)
     {
+        // Default date range: past 1 week
+        $dateFrom = $request->date_from ?? now()->subWeek()->format('Y-m-d');
+        $dateTo   = $request->date_to   ?? now()->format('Y-m-d');
+
         $query = PurchaseOrder::with('client', 'creator')
             ->when($request->search, fn($q, $s) => $q->where('po_number', 'like', "%{$s}%"))
             ->when($request->status, fn($q, $s) => $q->where('status', $s))
             ->when($request->client_id, fn($q, $c) => $q->where('client_id', $c))
-            ->when($request->date_from, fn($q, $d) => $q->where('po_date', '>=', $d))
-            ->when($request->date_to, fn($q, $d) => $q->where('po_date', '<=', $d));
+            ->where('po_date', '>=', $dateFrom)
+            ->where('po_date', '<=', $dateTo);
 
         if (auth()->user()->isStaff()) {
             $query->where('created_by', auth()->id());
@@ -30,7 +34,7 @@ class PurchaseOrderController extends Controller
         $purchaseOrders = $query->latest()->paginate(25);
         $clients = Client::active()->orderBy('name')->get();
 
-        return view('transaction.purchase-orders.index', compact('purchaseOrders', 'clients'));
+        return view('transaction.purchase-orders.index', compact('purchaseOrders', 'clients', 'dateFrom', 'dateTo'));
     }
 
     public function create()

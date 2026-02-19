@@ -45,6 +45,9 @@
                                     @endif
                                 </td>
                                 <td>
+                                    <a href="{{ route('items.index', ['category_id' => $category->id]) }}" class="btn btn-sm btn-outline-info btn-action" title="Lihat Item">
+                                        <i class="bi bi-box-seam"></i>
+                                    </a>
                                     <a href="{{ route('categories.edit', $category) }}" class="btn btn-sm btn-outline-primary btn-action" title="Edit">
                                         <i class="bi bi-pencil"></i>
                                     </a>

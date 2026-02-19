@@ -33,12 +33,18 @@
                             <th>PIC</th>
                             <th>Termin</th>
                             <th>Credit Limit</th>
+                            <th class="text-center">Total PO</th>
+                            <th class="text-center">PO Belum Selesai</th>
+                            <th class="text-end">Tagihan Belum Lunas</th>
                             <th>Status</th>
                             <th width="140">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($clients as $client)
+                            @php
+                                $nominalUnpaid = $client->invoices->sum('remaining_amount');
+                            @endphp
                             <tr>
                                 <td>{{ $loop->iteration + ($clients->currentPage() - 1) * $clients->perPage() }}</td>
                                 <td><code>{{ $client->code }}</code></td>
@@ -46,6 +52,17 @@
                                 <td>{{ $client->pic_name ?? '-' }}</td>
                                 <td>{{ $client->payment_terms_label }}</td>
                                 <td>{{ $client->credit_limit ? \App\Helpers\FormatHelper::rupiah($client->credit_limit) : '-' }}</td>
+                                <td class="text-center"><span class="badge bg-secondary">{{ $client->total_po }}</span></td>
+                                <td class="text-center">
+                                    @if($client->total_po_unpaid > 0)
+                                        <span class="badge bg-warning text-dark">{{ $client->total_po_unpaid }}</span>
+                                    @else
+                                        <span class="badge bg-light text-dark">0</span>
+                                    @endif
+                                </td>
+                                <td class="text-end fw-semibold {{ $nominalUnpaid > 0 ? 'text-danger' : 'text-muted' }}">
+                                    {{ $nominalUnpaid > 0 ? \App\Helpers\FormatHelper::rupiah($nominalUnpaid) : '-' }}
+                                </td>
                                 <td>{!! $client->is_active ? '<span class="badge bg-success">Aktif</span>' : '<span class="badge bg-secondary">Non-aktif</span>' !!}</td>
                                 <td>
                                     <a href="{{ route('clients.show', $client) }}" class="btn btn-sm btn-outline-info btn-action" title="Detail"><i class="bi bi-eye"></i></a>
@@ -57,7 +74,7 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="8" class="text-center py-4 text-muted">Belum ada client.</td></tr>
+                            <tr><td colspan="11" class="text-center py-4 text-muted">Belum ada client.</td></tr>
                         @endforelse
                     </tbody>
                 </table>

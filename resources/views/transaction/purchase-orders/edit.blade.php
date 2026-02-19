@@ -72,12 +72,13 @@
                         </div>
                     </div>
                     <div class="card-body p-0">
-                        <div class="table-responsive">
+                        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
                                     <table class="table mb-0" id="itemsTable">
-                                <thead><tr><th>Item</th><th width="100">Qty</th><th width="80">Satuan</th><th width="180">Harga Beli</th><th width="180">Harga Jual</th><th width="180">Subtotal</th><th width="50"></th></tr></thead>
+                                <thead class="sticky-top bg-white" style="z-index:2;"><tr><th width="40">#</th><th>Item</th><th width="100">Qty</th><th width="80">Satuan</th><th width="180">Harga Beli</th><th width="180">Harga Jual</th><th width="180">Subtotal</th><th width="50"></th></tr></thead>
                                 <tbody id="itemsBody">
                                     @foreach($purchaseOrder->items as $i => $poItem)
                                     <tr class="item-row" data-index="{{ $i }}">
+                                        <td class="row-num text-muted">{{ $i + 1 }}</td>
                                         <td>
                                             <select class="form-select form-select-sm item-select select2" name="items[{{ $i }}][item_id]" required {{ !$canEditItems ? 'disabled' : '' }}>
                                                 <option value="">Pilih Item</option>
@@ -101,9 +102,9 @@
                                     @endforeach
                                 </tbody>
                                 <tfoot>
-                                    <tr class="table-light"><td colspan="5" class="text-end fw-bold">Total (Beli):</td><td class="fw-bold text-muted" id="totalPurchase">Rp 0</td><td></td></tr>
-                                    <tr class="table-light"><td colspan="5" class="text-end fw-bold">Total (Jual):</td><td class="fw-bold" id="grandTotal">Rp 0</td><td></td></tr>
-                                    <tr class="table-success"><td colspan="5" class="text-end fw-bold">Estimasi Profit:</td><td class="fw-bold" id="profitEstimate">Rp 0</td><td></td></tr>
+                                    <tr class="table-light"><td colspan="6" class="text-end fw-bold">Total (Beli):</td><td class="fw-bold text-muted" id="totalPurchase">Rp 0</td><td></td></tr>
+                                    <tr class="table-light"><td colspan="6" class="text-end fw-bold">Total (Jual):</td><td class="fw-bold" id="grandTotal">Rp 0</td><td></td></tr>
+                                    <tr class="table-success"><td colspan="6" class="text-end fw-bold">Estimasi Profit:</td><td class="fw-bold" id="profitEstimate">Rp 0</td><td></td></tr>
                                 </tfoot>
                             </table>
                         </div>
@@ -214,7 +215,7 @@
                 document.getElementById('addItem').addEventListener('click', function() {
                     const row = document.createElement('tr');
                     row.className = 'item-row';
-                    row.innerHTML = `<td><select class="form-select form-select-sm item-select select2" name="items[${itemIndex}][item_id]" required>${buildItemOptions()}</select></td><td><input type="number" class="form-control form-control-sm qty-input" name="items[${itemIndex}][quantity]" min="0.01" step="0.01" value="1" required></td><td><input type="text" class="form-control form-control-sm unit-input" name="items[${itemIndex}][unit]" required></td><td><input type="number" class="form-control form-control-sm purchase-price-input" name="items[${itemIndex}][purchase_price]" min="0" step="1" value="0"></td><td><input type="number" class="form-control form-control-sm price-input" name="items[${itemIndex}][selling_price]" min="0" step="1" value="0" required></td><td class="subtotal-cell fw-semibold">Rp 0</td><td><button type="button" class="btn btn-sm btn-outline-danger remove-item"><i class="bi bi-x"></i></button></td>`;
+                    row.innerHTML = `<td class="row-num text-muted">${document.querySelectorAll('.item-row').length + 1}</td><td><select class="form-select form-select-sm item-select select2" name="items[${itemIndex}][item_id]" required>${buildItemOptions()}</select></td><td><input type="number" class="form-control form-control-sm qty-input" name="items[${itemIndex}][quantity]" min="0.01" step="0.01" value="1" required></td><td><input type="text" class="form-control form-control-sm unit-input" name="items[${itemIndex}][unit]" required></td><td><input type="number" class="form-control form-control-sm purchase-price-input" name="items[${itemIndex}][purchase_price]" min="0" step="1" value="0"></td><td><input type="number" class="form-control form-control-sm price-input" name="items[${itemIndex}][selling_price]" min="0" step="1" value="0" required></td><td class="subtotal-cell fw-semibold">Rp 0</td><td><button type="button" class="btn btn-sm btn-outline-danger remove-item"><i class="bi bi-x"></i></button></td>`;
                     document.getElementById('itemsBody').appendChild(row);
                     
                     if (typeof $ !== 'undefined') {
@@ -333,10 +334,18 @@
                                 $(row.querySelector('.item-select')).select2('destroy');
                             }
                             row.remove(); 
-                            calculateTotals(); 
+                            calculateTotals();
+                            renumberRows();
                         }
                     });
                 }
+            }
+
+            function renumberRows() {
+                document.querySelectorAll('.item-row').forEach((r, i) => {
+                    const num = r.querySelector('.row-num');
+                    if (num) num.textContent = i + 1;
+                });
             }
         });
     </script>

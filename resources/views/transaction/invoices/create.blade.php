@@ -62,12 +62,14 @@
                 <div class="card">
                     <div class="card-header">Item Invoice</div>
                     <div class="card-body p-0">
+                        <div class="table-responsive" style="max-height: 380px; overflow-y: auto;">
                         <table class="table mb-0">
-                            <thead><tr><th>Item</th><th>Qty</th><th>Satuan</th><th>Harga</th><th>Subtotal</th></tr></thead>
+                            <thead class="sticky-top bg-white" style="z-index:2;"><tr><th width="40">#</th><th>Item</th><th>Qty</th><th>Satuan</th><th>Harga</th><th>Subtotal</th></tr></thead>
                             <tbody id="invItemsBody">
                                 @if($selectedPo)
                                     @foreach($selectedPo->items as $poItem)
                                     <tr>
+                                        <td class="text-muted">{{ $loop->iteration }}</td>
                                         <td>{{ $poItem->item->name }}
                                             <input type="hidden" name="items[{{ $loop->index }}][po_item_id]" value="{{ $poItem->id }}">
                                         </td>
@@ -78,10 +80,11 @@
                                     </tr>
                                     @endforeach
                                 @else
-                                    <tr id="emptyRow"><td colspan="5" class="text-center py-3 text-muted">Pilih PO terlebih dahulu</td></tr>
+                                    <tr id="emptyRow"><td colspan="6" class="text-center py-3 text-muted">Pilih PO terlebih dahulu</td></tr>
                                 @endif
                             </tbody>
                         </table>
+                        </div>
                     </div>
                 </div>
 
@@ -140,9 +143,9 @@
             document.getElementById('dueDate').value = due.toISOString().split('T')[0];
 
             const body = document.getElementById('invItemsBody');
-            if (!this.value) { body.innerHTML = '<tr id="emptyRow"><td colspan="5" class="text-center py-3 text-muted">Pilih PO</td></tr>'; recalc(); return; }
+            if (!this.value) { body.innerHTML = '<tr id="emptyRow"><td colspan="6" class="text-center py-3 text-muted">Pilih PO</td></tr>'; recalc(); return; }
             const items = JSON.parse(opt.dataset.items || '[]');
-            body.innerHTML = items.map((it, i) => `<tr><td>${it.name}<input type="hidden" name="items[${i}][po_item_id]" value="${it.id}"></td><td><input type="number" class="form-control form-control-sm inv-qty" name="items[${i}][quantity]" value="${it.qty}" min="0.01" step="0.01" required></td><td>${it.unit}</td><td><input type="number" class="form-control form-control-sm inv-price" name="items[${i}][unit_price]" value="${it.price}" min="0" step="1" required></td><td class="inv-subtotal fw-semibold">Rp 0</td></tr>`).join('');
+            body.innerHTML = items.map((it, i) => `<tr><td class="text-muted">${i+1}</td><td>${it.name}<input type="hidden" name="items[${i}][po_item_id]" value="${it.id}"></td><td><input type="number" class="form-control form-control-sm inv-qty" name="items[${i}][quantity]" value="${it.qty}" min="0.01" step="0.01" required></td><td>${it.unit}</td><td><input type="number" class="form-control form-control-sm inv-price" name="items[${i}][unit_price]" value="${it.price}" min="0" step="1" required></td><td class="inv-subtotal fw-semibold">Rp 0</td></tr>`).join('');
             body.querySelectorAll('.inv-qty, .inv-price').forEach(el => el.addEventListener('input', recalc));
             recalc();
         });

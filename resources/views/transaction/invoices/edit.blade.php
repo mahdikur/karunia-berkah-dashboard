@@ -64,14 +64,16 @@
                 <div class="card">
                     <div class="card-header">Item Invoice</div>
                     <div class="card-body p-0">
+                        <div class="table-responsive" style="max-height: 380px; overflow-y: auto;">
                         <table class="table mb-0">
-                            <thead><tr><th>Item</th><th>Qty</th><th>Satuan</th><th>Harga</th><th>Subtotal</th></tr></thead>
+                            <thead class="sticky-top bg-white" style="z-index:2;"><tr><th width="40">#</th><th>Item</th><th>Qty</th><th>Satuan</th><th>Harga</th><th>Subtotal</th></tr></thead>
                             <tbody id="invItemsBody">
                                 @foreach($invoice->purchaseOrder->items as $i => $poItem)
                                 @php
                                     $invItem = $invoice->items->firstWhere('po_item_id', $poItem->id);
                                 @endphp
                                 <tr>
+                                    <td class="text-muted">{{ $i + 1 }}</td>
                                     <td>
                                         {{ $poItem->item->name }}
                                         <input type="hidden" name="items[{{ $i }}][po_item_id]" value="{{ $poItem->id }}">
@@ -88,6 +90,7 @@
                                 @endforeach
                             </tbody>
                         </table>
+                        </div>
                     </div>
                 </div>
 

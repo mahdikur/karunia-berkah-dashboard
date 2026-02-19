@@ -11,30 +11,43 @@
     <div class="card mb-3">
         <div class="card-body py-3">
             <form method="GET" class="row g-2 align-items-end">
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <input type="text" class="form-control" name="search" value="{{ request('search') }}" placeholder="Cari no. PO...">
                 </div>
                 <div class="col-md-3">
-                    <select class="form-select" name="client_id">
+                    <select class="form-select select2-filter" name="client_id" id="filterClient">
                         <option value="">Semua Client</option>
                         @foreach($clients as $c)<option value="{{ $c->id }}" {{ request('client_id') == $c->id ? 'selected' : '' }}>{{ $c->name }}</option>@endforeach
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <select class="form-select" name="status">
+                    <select class="form-select select2-filter" name="status" id="filterStatus">
                         <option value="">Semua Status</option>
                         @foreach(['draft','pending_approval','approved','rejected','in_delivery','completed','cancelled'] as $s)
                             <option value="{{ $s }}" {{ request('status') === $s ? 'selected' : '' }}>{{ ucfirst(str_replace('_', ' ', $s)) }}</option>
                         @endforeach
                     </select>
                 </div>
-                <div class="col-md-2"><button type="submit" class="btn btn-primary w-100"><i class="bi bi-search me-1"></i>Filter</button></div>
-                @if(request()->hasAny(['search','client_id','status']))
-                <div class="col-md-2"><a href="{{ route('purchase-orders.index') }}" class="btn btn-outline-secondary w-100">Reset</a></div>
-                @endif
+                <div class="col-md-2">
+                    <input type="date" class="form-control" name="date_from" value="{{ request('date_from', $dateFrom) }}" placeholder="Dari">
+                </div>
+                <div class="col-md-2">
+                    <input type="date" class="form-control" name="date_to" value="{{ request('date_to', $dateTo) }}" placeholder="Sampai">
+                </div>
+                <div class="col-md-1"><button type="submit" class="btn btn-primary w-100"><i class="bi bi-search"></i></button></div>
             </form>
         </div>
     </div>
+
+    @push('scripts')
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof $ !== 'undefined') {
+            $('#filterClient, #filterStatus').select2({ theme: 'bootstrap-5', width: '100%' });
+        }
+    });
+    </script>
+    @endpush
 
     <div class="card">
         <div class="card-body p-0">

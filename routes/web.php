@@ -74,6 +74,8 @@ Route::middleware('auth')->group(function () {
     Route::patch('return-notes/{return_note}/status', [ReturnNoteController::class, 'updateStatus'])->name('return-notes.update-status');
 
     // Invoices
+    Route::get('invoices/batch', [InvoiceController::class, 'batch'])->name('invoices.batch');
+    Route::get('invoices/batch/invoices', [InvoiceController::class, 'getClientInvoices'])->name('invoices.batch-invoices');
     Route::get('invoices/batch/print', [InvoiceController::class, 'batchPrint'])->name('invoices.batch-print');
     Route::resource('invoices', InvoiceController::class);
     Route::get('invoices/{invoice}/print', [InvoiceController::class, 'print'])->name('invoices.print');

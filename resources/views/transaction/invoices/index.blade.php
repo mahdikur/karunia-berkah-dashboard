@@ -6,7 +6,7 @@
             <nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li><li class="breadcrumb-item active">Invoice</li></ol></nav>
         </div>
         <div class="d-flex gap-2">
-            <a href="{{ route('invoices.batch-print') }}" target="_blank" class="btn btn-outline-secondary"><i class="bi bi-printer me-1"></i>Batch Print</a>
+            <a href="{{ route('invoices.batch') }}" class="btn btn-outline-secondary"><i class="bi bi-collection me-1"></i>Batch Invoice</a>
             <a href="{{ route('invoices.create') }}" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>Buat Invoice</a>
         </div>
     </div>

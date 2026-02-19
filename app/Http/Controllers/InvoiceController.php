@@ -229,10 +229,44 @@ class InvoiceController extends Controller
         return view('transaction.invoices.print', compact('invoice'));
     }
 
+    public function batch()
+    {
+        $clients = Client::active()->whereHas('invoices', function ($q) {
+            $q->whereIn('status', ['unpaid', 'partial', 'overdue']);
+        })->orderBy('name')->get();
+
+        return view('transaction.invoices.batch', compact('clients'));
+    }
+
+    public function getClientInvoices(Request $request)
+    {
+        $request->validate(['client_id' => 'required|exists:clients,id']);
+
+        $invoices = Invoice::where('client_id', $request->client_id)
+            ->whereIn('status', ['unpaid', 'partial', 'overdue'])
+            ->with('purchaseOrder.items', 'items')
+            ->latest()
+            ->get()
+            ->map(function ($inv) {
+                return [
+                    'id' => $inv->id,
+                    'invoice_number' => $inv->invoice_number,
+                    'po_number' => $inv->purchaseOrder->po_number ?? '-',
+                    'po_date' => $inv->purchaseOrder->po_date ? $inv->purchaseOrder->po_date->format('d/m/Y') : '-',
+                    'total_items' => $inv->purchaseOrder->items->sum('quantity'),
+                    'total_amount' => $inv->total_amount,
+                    'remaining_amount' => $inv->remaining_amount,
+                    'status' => $inv->status,
+                ];
+            });
+
+        return response()->json($invoices);
+    }
+
     public function batchPrint(Request $request)
     {
         $query = Invoice::whereIn('status', ['unpaid', 'partial', 'overdue'])
-            ->with('purchaseOrder', 'client', 'items.item');
+            ->with('purchaseOrder.items', 'client', 'items.item');
 
         if ($request->invoice_ids) {
             $ids = is_array($request->invoice_ids) ? $request->invoice_ids : explode(',', $request->invoice_ids);
@@ -246,10 +280,29 @@ class InvoiceController extends Controller
         $invoices = $query->latest()->get();
 
         if ($invoices->isEmpty()) {
-            return back()->with('error', 'Tidak ada invoice yang belum bayar untuk dicetak.');
+            return redirect()->route('invoices.batch')->with('error', 'Tidak ada invoice yang dipilih.');
         }
 
-        return view('transaction.invoices.batch-print', compact('invoices'));
+        // Parse discounts from request
+        $discounts = $request->discounts ?? [];
+
+        // Calculate grand total
+        $grandSubtotal = 0;
+        $grandDiscount = 0;
+        $grandTotal = 0;
+
+        foreach ($invoices as $inv) {
+            $discount = isset($discounts[$inv->id]) ? (float) $discounts[$inv->id] : 0;
+            $inv->batch_discount = $discount;
+            $inv->batch_nett = $inv->total_amount - $discount;
+            $grandSubtotal += $inv->total_amount;
+            $grandDiscount += $discount;
+            $grandTotal += $inv->batch_nett;
+        }
+
+        $client = $invoices->first()->client;
+
+        return view('transaction.invoices.batch-print', compact('invoices', 'client', 'grandSubtotal', 'grandDiscount', 'grandTotal', 'discounts'));
     }
 
     public function destroy(Invoice $invoice)

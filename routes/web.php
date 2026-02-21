@@ -68,6 +68,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('delivery-notes', DeliveryNoteController::class);
     Route::get('delivery-notes/{delivery_note}/print', [DeliveryNoteController::class, 'print'])->name('delivery-notes.print');
     Route::patch('delivery-notes/{delivery_note}/status', [DeliveryNoteController::class, 'updateStatus'])->name('delivery-notes.update-status');
+    Route::post('delivery-notes/{delivery_note}/regenerate', [DeliveryNoteController::class, 'regenerate'])->name('delivery-notes.regenerate');
 
     // Return Notes (Retur)
     Route::resource('return-notes', ReturnNoteController::class)->except(['edit', 'update']);
@@ -79,6 +80,7 @@ Route::middleware('auth')->group(function () {
     Route::get('invoices/batch/print', [InvoiceController::class, 'batchPrint'])->name('invoices.batch-print');
     Route::resource('invoices', InvoiceController::class);
     Route::get('invoices/{invoice}/print', [InvoiceController::class, 'print'])->name('invoices.print');
+    Route::post('invoices/{invoice}/regenerate', [InvoiceController::class, 'regenerate'])->name('invoices.regenerate');
 
     // Payments
     Route::resource('payments', PaymentController::class)->except(['edit', 'update', 'show']);

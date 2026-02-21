@@ -5,20 +5,30 @@
         <nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li><li class="breadcrumb-item"><a href="{{ route('purchase-orders.index') }}">PO</a></li><li class="breadcrumb-item active">Edit</li></ol></nav>
     </div>
 
-    @if(!$canEditItems && ($hasDeliveryNotes || $hasInvoice))
-    <div class="alert alert-warning">
-        <i class="bi bi-exclamation-triangle me-2"></i><strong>Perhatian:</strong> PO ini sudah memiliki 
-        @if($hasDeliveryNotes) Surat Jalan @endif
-        @if($hasDeliveryNotes && $hasInvoice) dan @endif
-        @if($hasInvoice) Invoice @endif
-        terkait. Anda hanya bisa mengubah <strong>harga</strong> dan <strong>informasi umum</strong> (tanggal kirim, catatan). Item tidak bisa ditambah/dihapus.
-    </div>
+    @if($purchaseOrder->status === 'approved')
+        @if($dnCount > 1 || $invoiceCount > 1)
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle me-2"></i><strong>Perhatian:</strong> PO ini sudah memiliki lebih dari 1
+            @if($dnCount > 1) Surat Jalan @endif
+            @if($dnCount > 1 && $invoiceCount > 1) dan @endif
+            @if($invoiceCount > 1) Invoice @endif
+            terkait. Anda hanya bisa mengubah <strong>harga</strong> dan <strong>informasi umum</strong> (tanggal kirim, catatan). Item tidak bisa ditambah/dihapus.
+        </div>
+        @elseif($hasDeliveryNotes || $hasInvoice)
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle me-2"></i><strong>Info:</strong> PO ini sudah memiliki
+            @if($hasDeliveryNotes) 1 Surat Jalan @endif
+            @if($hasDeliveryNotes && $hasInvoice) dan @endif
+            @if($hasInvoice) 1 Invoice @endif
+            terkait. Anda boleh mengubah item &amp; qty, dan perubahan akan <strong>otomatis memperbarui</strong> Surat Jalan/Invoice tersebut.
+        </div>
+        @endif
     @endif
 
     <form action="{{ route('purchase-orders.update', $purchaseOrder) }}" method="POST" id="poForm">
         @csrf @method('PUT')
         <div class="row g-3">
-            <div class="col-lg-4">
+            <div class="col-lg-3">
                 <div class="card">
                     <div class="card-header">Informasi PO</div>
                     <div class="card-body">
@@ -32,16 +42,16 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Client <span class="text-danger">*</span></label>
-                            <select class="form-select select2" name="client_id" id="clientSelect" required {{ !$canEditItems ? 'disabled' : '' }}>
+                            <select class="form-select select2" name="client_id" id="clientSelect" required {{ ($isApproved || !$canEditItems) ? 'disabled' : '' }}>
                                 @foreach($clients as $c)
                                     <option value="{{ $c->id }}" {{ $purchaseOrder->client_id == $c->id ? 'selected' : '' }}>{{ $c->name }}</option>
                                 @endforeach
                             </select>
-                            @if(!$canEditItems)<input type="hidden" name="client_id" value="{{ $purchaseOrder->client_id }}">@endif
+                            @if($isApproved || !$canEditItems)<input type="hidden" name="client_id" value="{{ $purchaseOrder->client_id }}">@endif
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Tanggal PO <span class="text-danger">*</span></label>
-                            <input type="date" class="form-control" name="po_date" value="{{ $purchaseOrder->po_date->format('Y-m-d') }}" required {{ !$canEditItems ? 'readonly' : '' }}>
+                            <input type="date" class="form-control" name="po_date" value="{{ $purchaseOrder->po_date->format('Y-m-d') }}" required {{ ($isApproved || !$canEditItems) ? 'readonly' : '' }}>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Tanggal Pengiriman</label>
@@ -60,7 +70,7 @@
                 </div>
             </div>
 
-            <div class="col-lg-8">
+            <div class="col-lg-9">
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <span>Daftar Item</span>
@@ -112,7 +122,7 @@
                 </div>
 
                 <div class="d-flex gap-2 mt-3">
-                    @if($canEditItems)
+                    @if($canEditItems && !$isApproved)
                     <button type="submit" class="btn btn-secondary"><i class="bi bi-save me-1"></i>Simpan sbg Draft</button>
                     <button type="submit" name="submit_approval" value="1" class="btn btn-primary"><i class="bi bi-send me-1"></i>Ajukan Approval</button>
                     @else

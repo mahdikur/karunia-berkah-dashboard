@@ -8,6 +8,7 @@
         <div class="d-flex gap-2">
             @if($deliveryNote->status !== 'received')
                 <a href="{{ route('delivery-notes.edit', $deliveryNote) }}" class="btn btn-outline-warning"><i class="bi bi-pencil me-1"></i>Edit</a>
+                <button type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#regenerateModal"><i class="bi bi-arrow-repeat me-1"></i>Regenerate</button>
             @endif
             <a href="{{ route('delivery-notes.print', $deliveryNote) }}" target="_blank" class="btn btn-outline-secondary"><i class="bi bi-printer me-1"></i>Print</a>
             <a href="{{ route('return-notes.create', ['dn_id' => $deliveryNote->id]) }}" class="btn btn-outline-danger"><i class="bi bi-arrow-return-left me-1"></i>Buat Retur</a>
@@ -101,6 +102,32 @@
                         </tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Regenerate Modal --}}
+    <div class="modal fade" id="regenerateModal" tabindex="-1">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-arrow-repeat me-1"></i>Regenerate Surat Jalan</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form action="{{ route('delivery-notes.regenerate', $deliveryNote) }}" method="POST">
+                    @csrf
+                    <div class="modal-body">
+                        <p class="text-muted small">Regenerate akan menghapus item yang ada sekarang dan menggantinya dengan item dari PO ({{ $deliveryNote->purchaseOrder->po_number }}).</p>
+                        <div class="alert alert-info small mb-0">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Semua perubahan manual pada item akan hilang.
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-arrow-repeat me-1"></i>Regenerate</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

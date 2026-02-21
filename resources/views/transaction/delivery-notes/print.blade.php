@@ -77,7 +77,7 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach($deliveryNote->items as $index => $item)
+                @foreach($deliveryNote->items->where('is_unavailable', false)->values() as $index => $item)
                 <tr>
                     <td style="text-align: center;">{{ $index + 1 }}</td>
                     <td>{{ $item->item->name }} ({{ $item->item->code }})</td>

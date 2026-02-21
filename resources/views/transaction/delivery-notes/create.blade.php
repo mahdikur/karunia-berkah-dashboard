@@ -47,11 +47,12 @@
                     <div class="card-header">Item yang Dikirim</div>
                     <div class="card-body p-0">
                         <table class="table mb-0" id="dnItems">
-                            <thead><tr><th>Item</th><th>Qty PO</th><th>Qty Kirim</th><th>Satuan</th><th width="120">Unavailable</th></tr></thead>
+                            <thead><tr><th width="40">#</th><th>Item</th><th>Qty PO</th><th>Qty Kirim</th><th>Satuan</th><th width="120">Unavailable</th></tr></thead>
                             <tbody id="dnItemsBody">
                                 @if($selectedPo)
                                     @foreach($selectedPo->items as $poItem)
                                     <tr class="dn-item-row">
+                                        <td class="text-muted">{{ $loop->iteration }}</td>
                                         <td>{{ $poItem->item->name }}<input type="hidden" name="items[{{ $loop->index }}][po_item_id]" value="{{ $poItem->id }}"></td>
                                         <td>{{ number_format($poItem->quantity, 2) }}</td>
                                         <td><input type="number" class="form-control form-control-sm qty-deliver" name="items[{{ $loop->index }}][quantity_delivered]" value="{{ $poItem->quantity }}" min="0" step="0.01" required></td>
@@ -92,6 +93,7 @@
             const items = JSON.parse(opt.dataset.items || '[]');
             body.innerHTML = items.map((it, i) => `
                 <tr class="dn-item-row">
+                    <td class="text-muted">${i + 1}</td>
                     <td>${it.name}<input type="hidden" name="items[${i}][po_item_id]" value="${it.id}"></td>
                     <td>${parseFloat(it.qty).toFixed(2)}</td>
                     <td><input type="number" class="form-control form-control-sm qty-deliver" name="items[${i}][quantity_delivered]" value="${it.qty}" min="0" step="0.01" required></td>

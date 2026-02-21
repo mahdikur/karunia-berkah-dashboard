@@ -76,6 +76,12 @@
                                         <a href="{{ route('delivery-notes.edit', $dn) }}" class="btn btn-sm btn-outline-warning" title="Edit"><i class="bi bi-pencil"></i></a>
                                         @endif
                                         <a href="{{ route('delivery-notes.print', $dn) }}" target="_blank" class="btn btn-sm btn-outline-secondary" title="Print"><i class="bi bi-printer"></i></a>
+                                        @if($dn->status === 'draft')
+                                        <form action="{{ route('delivery-notes.destroy', $dn) }}" method="POST" id="del-dn-{{ $dn->id }}">
+                                            @csrf @method('DELETE')
+                                            <button type="button" class="btn btn-sm btn-outline-danger" title="Hapus" onclick="confirmDelete('del-dn-{{ $dn->id }}')"><i class="bi bi-trash"></i></button>
+                                        </form>
+                                        @endif
                                     </div>
                                 </td>
                             </tr>

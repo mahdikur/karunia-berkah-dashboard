@@ -78,6 +78,12 @@
                                         <a href="{{ route('invoices.edit', $inv) }}" class="btn btn-sm btn-outline-warning" title="Edit"><i class="bi bi-pencil"></i></a>
                                         @endif
                                         <a href="{{ route('invoices.print', $inv) }}" target="_blank" class="btn btn-sm btn-outline-secondary" title="Print"><i class="bi bi-printer"></i></a>
+                                        @if($inv->paid_amount == 0)
+                                        <form action="{{ route('invoices.destroy', $inv) }}" method="POST" id="del-inv-{{ $inv->id }}">
+                                            @csrf @method('DELETE')
+                                            <button type="button" class="btn btn-sm btn-outline-danger" title="Hapus" onclick="confirmDelete('del-inv-{{ $inv->id }}')"><i class="bi bi-trash"></i></button>
+                                        </form>
+                                        @endif
                                     </div>
                                 </td>
                             </tr>

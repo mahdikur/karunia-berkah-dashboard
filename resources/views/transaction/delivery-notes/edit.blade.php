@@ -47,13 +47,14 @@
                     <div class="card-header">Item yang Dikirim</div>
                     <div class="card-body p-0">
                         <table class="table mb-0">
-                            <thead><tr><th>Item</th><th>Qty PO</th><th>Qty Kirim</th><th>Satuan</th><th width="150">Unavailable</th></tr></thead>
+                            <thead><tr><th width="40">#</th><th>Item</th><th>Qty PO</th><th>Qty Kirim</th><th>Satuan</th><th width="150">Unavailable</th></tr></thead>
                             <tbody>
                                 @foreach($deliveryNote->purchaseOrder->items as $i => $poItem)
                                 @php
                                     $dnItem = $deliveryNote->items->firstWhere('po_item_id', $poItem->id);
                                 @endphp
                                 <tr class="dn-item-row">
+                                    <td class="text-muted">{{ $i + 1 }}</td>
                                     <td>
                                         {{ $poItem->item->name }}
                                         <input type="hidden" name="items[{{ $i }}][po_item_id]" value="{{ $poItem->id }}">

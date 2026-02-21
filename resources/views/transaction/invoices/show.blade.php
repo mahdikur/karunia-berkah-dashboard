@@ -11,8 +11,57 @@
             @endif
             @if($invoice->status !== 'paid')
                 <a href="{{ route('invoices.edit', $invoice) }}" class="btn btn-outline-warning"><i class="bi bi-pencil me-1"></i>Edit</a>
+                <button type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#regenerateModal"><i class="bi bi-arrow-repeat me-1"></i>Regenerate</button>
             @endif
             <a href="{{ route('invoices.print', $invoice) }}" target="_blank" class="btn btn-outline-secondary"><i class="bi bi-printer me-1"></i>Print</a>
+            @if($invoice->paid_amount == 0)
+            <form action="{{ route('invoices.destroy', $invoice) }}" method="POST" id="del-invoice-form">
+                @csrf @method('DELETE')
+                <button type="button" class="btn btn-outline-danger" onclick="confirmDelete('del-invoice-form')"><i class="bi bi-trash me-1"></i>Hapus</button>
+            </form>
+            @endif
+        </div>
+    </div>
+
+    {{-- Regenerate Modal --}}
+    <div class="modal fade" id="regenerateModal" tabindex="-1">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-arrow-repeat me-1"></i>Regenerate Invoice</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form action="{{ route('invoices.regenerate', $invoice) }}" method="POST">
+                    @csrf
+                    <div class="modal-body">
+                        <p class="text-muted small">Pilih sumber data untuk regenerate item invoice ini. Data item invoice lama akan digantikan.</p>
+                        <div class="mb-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="regenerate_from" id="reg_po" value="po" checked>
+                                <label class="form-check-label" for="reg_po">
+                                    <strong>Dari PO</strong><br>
+                                    <small class="text-muted">{{ $invoice->purchaseOrder->po_number }}</small>
+                                </label>
+                            </div>
+                        </div>
+                        @if($invoice->purchaseOrder->deliveryNotes->count() > 0)
+                        <div class="mb-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="regenerate_from" id="reg_dn" value="dn">
+                                <label class="form-check-label" for="reg_dn">
+                                    <strong>Dari Surat Jalan</strong><br>
+                                    <small class="text-muted">{{ $invoice->purchaseOrder->deliveryNotes->last()?->dn_number }} (terbaru)</small>
+                                </label>
+                            </div>
+                        </div>
+                        @endif
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-arrow-repeat me-1"></i>Regenerate</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 

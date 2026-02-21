@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\DeliveryNote;
 use App\Models\DeliveryNoteItem;
+use App\Models\InvoiceItem;
 use App\Models\PurchaseOrder;
 use Illuminate\Http\Request;
 
@@ -159,7 +160,47 @@ class DeliveryNoteController extends Controller
             ]);
         }
 
-        return redirect()->route('delivery-notes.show', $deliveryNote)->with('success', 'Surat Jalan berhasil diperbarui.');
+        // Auto-update the related invoice (if exactly 1 exists and not paid)
+        $invoice = $deliveryNote->purchaseOrder->invoice;
+        $invoiceUpdated = false;
+        if ($invoice && $invoice->status !== 'paid') {
+            $invoice->items()->delete();
+            $subtotal = 0;
+            foreach ($deliveryNote->fresh()->items()->where('is_unavailable', false)->with('poItem')->get() as $dnItem) {
+                $poItem = $dnItem->poItem;
+                if (!$poItem) continue;
+                $lineSubtotal = $dnItem->quantity_delivered * $poItem->selling_price;
+                InvoiceItem::create([
+                    'invoice_id' => $invoice->id,
+                    'po_item_id' => $dnItem->po_item_id,
+                    'item_id'    => $dnItem->item_id,
+                    'quantity'   => $dnItem->quantity_delivered,
+                    'unit'       => $dnItem->unit,
+                    'unit_price' => $poItem->selling_price,
+                    'subtotal'   => $lineSubtotal,
+                ]);
+                $subtotal += $lineSubtotal;
+            }
+            $discountAmount = $invoice->discount_type === 'percentage'
+                ? ($subtotal * $invoice->discount_value / 100)
+                : $invoice->discount_value;
+            $afterDiscount = $subtotal - $discountAmount;
+            $taxAmount     = $afterDiscount * $invoice->tax_percentage / 100;
+            $totalAmount   = $afterDiscount + $taxAmount;
+            $invoice->update([
+                'subtotal'         => $subtotal,
+                'discount_amount'  => $discountAmount,
+                'tax_amount'       => $taxAmount,
+                'total_amount'     => $totalAmount,
+                'remaining_amount' => $totalAmount - $invoice->paid_amount,
+            ]);
+            $invoiceUpdated = true;
+        }
+
+        $message = 'Surat Jalan berhasil diperbarui.';
+        if ($invoiceUpdated) $message .= ' Invoice terkait otomatis diperbarui.';
+
+        return redirect()->route('delivery-notes.show', $deliveryNote)->with('success', $message);
     }
 
     public function print(DeliveryNote $deliveryNote)
@@ -173,6 +214,34 @@ class DeliveryNoteController extends Controller
         $request->validate(['status' => 'required|in:draft,sent,received']);
         $deliveryNote->update(['status' => $request->status]);
         return back()->with('success', 'Status Surat Jalan berhasil diperbarui.');
+    }
+
+    public function regenerate(Request $request, DeliveryNote $deliveryNote)
+    {
+        if ($deliveryNote->status === 'received') {
+            return back()->with('error', 'Surat Jalan yang sudah diterima tidak bisa di-regenerate.');
+        }
+
+        $po = $deliveryNote->purchaseOrder;
+        $po->load('items');
+
+        // Delete existing DN items
+        $deliveryNote->items()->delete();
+
+        // Recreate items from PO
+        foreach ($po->items as $poItem) {
+            DeliveryNoteItem::create([
+                'delivery_note_id'   => $deliveryNote->id,
+                'po_item_id'         => $poItem->id,
+                'item_id'            => $poItem->item_id,
+                'quantity_delivered' => $poItem->quantity,
+                'unit'               => $poItem->unit,
+                'is_unavailable'     => false,
+            ]);
+        }
+
+        return redirect()->route('delivery-notes.show', $deliveryNote)
+            ->with('success', 'Surat Jalan berhasil di-regenerate dari PO.');
     }
 
     public function destroy(DeliveryNote $deliveryNote)

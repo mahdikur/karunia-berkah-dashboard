@@ -132,7 +132,7 @@ class InvoiceController extends Controller
 
     public function show(Invoice $invoice)
     {
-        $invoice->load('purchaseOrder', 'client', 'creator', 'items.item', 'payments.creator');
+        $invoice->load('purchaseOrder.deliveryNotes', 'client', 'creator', 'items.item', 'payments.creator');
         return view('transaction.invoices.show', compact('invoice'));
     }
 
@@ -317,6 +317,89 @@ class InvoiceController extends Controller
         $client = $invoices->first()->client;
 
         return view('transaction.invoices.batch-print', compact('invoices', 'client', 'grandSubtotal', 'grandDiscount', 'grandTotal', 'discounts'));
+    }
+
+    public function regenerate(Request $request, Invoice $invoice)
+    {
+        if ($invoice->status === 'paid') {
+            return back()->with('error', 'Invoice yang sudah lunas tidak bisa di-regenerate.');
+        }
+
+        $request->validate([
+            'regenerate_from' => 'required|in:po,dn',
+        ]);
+
+        $po = $invoice->purchaseOrder;
+
+        if ($request->regenerate_from === 'po') {
+            $po->load('items');
+            $invoice->items()->delete();
+            $subtotal = 0;
+            foreach ($po->items as $poItem) {
+                $lineSubtotal = $poItem->quantity * $poItem->selling_price;
+                InvoiceItem::create([
+                    'invoice_id' => $invoice->id,
+                    'po_item_id' => $poItem->id,
+                    'item_id'    => $poItem->item_id,
+                    'quantity'   => $poItem->quantity,
+                    'unit'       => $poItem->unit,
+                    'unit_price' => $poItem->selling_price,
+                    'subtotal'   => $lineSubtotal,
+                ]);
+                $subtotal += $lineSubtotal;
+            }
+            $fromLabel = 'PO';
+        } else {
+            $dn = $po->deliveryNotes()->latest()->first();
+            if (!$dn) {
+                return back()->with('error', 'Tidak ada Surat Jalan untuk PO ini.');
+            }
+            $dn->load('items.poItem');
+            $invoice->items()->delete();
+            $subtotal = 0;
+            foreach ($dn->items->where('is_unavailable', false) as $dnItem) {
+                $poItem = $dnItem->poItem;
+                if (!$poItem) continue;
+                $lineSubtotal = $dnItem->quantity_delivered * $poItem->selling_price;
+                InvoiceItem::create([
+                    'invoice_id' => $invoice->id,
+                    'po_item_id' => $dnItem->po_item_id,
+                    'item_id'    => $dnItem->item_id,
+                    'quantity'   => $dnItem->quantity_delivered,
+                    'unit'       => $dnItem->unit,
+                    'unit_price' => $poItem->selling_price,
+                    'subtotal'   => $lineSubtotal,
+                ]);
+                $subtotal += $lineSubtotal;
+            }
+            $fromLabel = 'Surat Jalan (' . $dn->dn_number . ')';
+        }
+
+        // Recalculate totals
+        $discountAmount = $invoice->discount_type === 'percentage'
+            ? ($subtotal * $invoice->discount_value / 100)
+            : $invoice->discount_value;
+        $afterDiscount = $subtotal - $discountAmount;
+        $taxAmount     = $afterDiscount * $invoice->tax_percentage / 100;
+        $totalAmount   = $afterDiscount + $taxAmount;
+        $paidAmount    = $invoice->paid_amount;
+
+        $status = 'unpaid';
+        if ($paidAmount >= $totalAmount && $totalAmount > 0) $status = 'paid';
+        elseif ($paidAmount > 0) $status = 'partial';
+        elseif ($invoice->due_date < now() && $totalAmount > 0) $status = 'overdue';
+
+        $invoice->update([
+            'subtotal'         => $subtotal,
+            'discount_amount'  => $discountAmount,
+            'tax_amount'       => $taxAmount,
+            'total_amount'     => $totalAmount,
+            'remaining_amount' => $totalAmount - $paidAmount,
+            'status'           => $status,
+        ]);
+
+        return redirect()->route('invoices.show', $invoice)
+            ->with('success', "Invoice berhasil di-regenerate dari {$fromLabel}.");
     }
 
     public function destroy(Invoice $invoice)

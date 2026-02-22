@@ -91,16 +91,23 @@
         </div>
     </div>
 
-    @if($itemBreakdown->count() > 0)
+    @if($clientBreakdown)
     <div class="card mt-3">
         <div class="card-header">
-            <strong>Breakdown Per Item</strong>
+            <strong>Breakdown Per Client</strong>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover mb-0" style="font-size: 13px;">
+                <table class="table mb-0" style="font-size: 13px;">
+                    @php $grandRevenue = 0; $grandHpp = 0; @endphp
+                    @foreach($clientBreakdown as $client)
                     <thead class="table-light">
-                        <tr>
+                        <tr style="background: #e7f3ff; border-top: 2px solid #0066cc;">
+                            <th colspan="7" class="py-2">
+                                <strong>{{ $client['client_name'] }}</strong>
+                            </th>
+                        </tr>
+                        <tr style="background: #f0f7ff;">
                             <th>Item</th>
                             <th class="text-center">Qty</th>
                             <th class="text-end">HPP/Unit</th>
@@ -111,7 +118,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($itemBreakdown as $item)
+                        @foreach($client['items'] as $item)
                         <tr>
                             <td>{{ $item['item_name'] }}</td>
                             <td class="text-center">{{ number_format($item['qty'], 2) }}</td>
@@ -122,7 +129,25 @@
                             <td class="text-end text-success fw-bold">{{ \App\Helpers\FormatHelper::rupiah($item['profit']) }}</td>
                         </tr>
                         @endforeach
+                        <tr style="background: #f9f9f9; border-top: 2px solid #ddd;">
+                            <td colspan="3" class="text-end fw-bold">Subtotal Client:</td>
+                            <td class="text-end fw-bold">{{ \App\Helpers\FormatHelper::rupiah($client['subtotal_hpp']) }}</td>
+                            <td colspan="1"></td>
+                            <td class="text-end fw-bold">{{ \App\Helpers\FormatHelper::rupiah($client['subtotal_revenue']) }}</td>
+                            <td class="text-end fw-bold text-success">{{ \App\Helpers\FormatHelper::rupiah($client['subtotal_profit']) }}</td>
+                        </tr>
                     </tbody>
+                    @php $grandRevenue += $client['subtotal_revenue']; $grandHpp += $client['subtotal_hpp']; @endphp
+                    @endforeach
+                    <tfoot style="background: #fffbeb; border-top: 3px solid #ff9800;">
+                        <tr class="fw-bold" style="font-size: 14px;">
+                            <td colspan="3" class="text-end">TOTAL SEMUA CLIENT:</td>
+                            <td class="text-end text-warning">{{ \App\Helpers\FormatHelper::rupiah($grandHpp) }}</td>
+                            <td colspan="1"></td>
+                            <td class="text-end text-warning">{{ \App\Helpers\FormatHelper::rupiah($grandRevenue) }}</td>
+                            <td class="text-end text-warning">{{ \App\Helpers\FormatHelper::rupiah($grandRevenue - $grandHpp) }}</td>
+                        </tr>
+                    </tfoot>
                 </table>
             </div>
         </div>

@@ -174,26 +174,73 @@ class ReportController extends Controller
             'margin' => $profitMargin,
         ];
 
-        // Breakdown per item (revenue/HPP)
-        $itemBreakdown = PurchaseOrderItem::whereIn('purchase_order_id', $poIds)
-            ->with('item')
-            ->get()
-            ->groupBy('item_id')
-            ->map(function ($items) {
-                $qty = $items->sum('quantity');
-                $totalHpp = $items->sum(fn($i) => $i->quantity * $i->purchase_price);
-                $totalRevenue = $items->sum(fn($i) => $i->quantity * $i->selling_price);
-                return [
-                    'item_name' => $items->first()->item->name,
-                    'qty' => $qty,
-                    'hpp_per_unit' => $items->first()->purchase_price,
-                    'total_hpp' => $totalHpp,
-                    'selling_price' => $items->first()->selling_price,
-                    'total_revenue' => $totalRevenue,
-                    'profit' => $totalRevenue - $totalHpp,
-                ];
-            })->values();
+        // Breakdown per client dengan item details di dalamnya
+        $clientBreakdown = [];
+        
+        // Get all invoices created on this date, grouped by client
+        $invoices = Invoice::whereDate('created_at', $date)
+            ->with('purchaseOrder.items.item', 'client')
+            ->get();
 
-        return view('report.daily', compact('date', 'displayDate', 'stats', 'itemBreakdown'));
+        foreach ($invoices as $invoice) {
+            $clientId = $invoice->client_id;
+            $clientName = $invoice->client->name;
+
+            if (!isset($clientBreakdown[$clientId])) {
+                $clientBreakdown[$clientId] = [
+                    'client_name' => $clientName,
+                    'items' => [],
+                    'subtotal_revenue' => 0,
+                    'subtotal_hpp' => 0,
+                    'subtotal_profit' => 0,
+                ];
+            }
+
+            // Process each item in this invoice
+            $poItems = $invoice->purchaseOrder->items;
+            foreach ($poItems as $poItem) {
+                $itemQty = $poItem->quantity;
+                $itemHpp = $poItem->purchase_price;
+                $itemSellingPrice = $poItem->selling_price;
+                $itemRevenue = $itemQty * $itemSellingPrice;
+                $itemHppTotal = $itemQty * $itemHpp;
+                $itemProfit = $itemRevenue - $itemHppTotal;
+
+                // Check if this item already exists in the client breakdown
+                $existingItem = collect($clientBreakdown[$clientId]['items'])
+                    ->firstWhere('item_name', $poItem->item->name);
+
+                if ($existingItem) {
+                    // Update existing item
+                    $key = collect($clientBreakdown[$clientId]['items'])
+                        ->search(fn($i) => $i['item_name'] === $poItem->item->name);
+                    $clientBreakdown[$clientId]['items'][$key]['qty'] += $itemQty;
+                    $clientBreakdown[$clientId]['items'][$key]['total_hpp'] += $itemHppTotal;
+                    $clientBreakdown[$clientId]['items'][$key]['total_revenue'] += $itemRevenue;
+                    $clientBreakdown[$clientId]['items'][$key]['profit'] += $itemProfit;
+                } else {
+                    // Add new item
+                    $clientBreakdown[$clientId]['items'][] = [
+                        'item_name' => $poItem->item->name,
+                        'qty' => $itemQty,
+                        'hpp_per_unit' => $itemHpp,
+                        'total_hpp' => $itemHppTotal,
+                        'selling_price' => $itemSellingPrice,
+                        'total_revenue' => $itemRevenue,
+                        'profit' => $itemProfit,
+                    ];
+                }
+
+                // Update client subtotals
+                $clientBreakdown[$clientId]['subtotal_revenue'] += $itemRevenue;
+                $clientBreakdown[$clientId]['subtotal_hpp'] += $itemHppTotal;
+                $clientBreakdown[$clientId]['subtotal_profit'] += $itemProfit;
+            }
+        }
+
+        // Reindex the array to maintain order
+        $clientBreakdown = array_values($clientBreakdown);
+
+        return view('report.daily', compact('date', 'displayDate', 'stats', 'clientBreakdown'));
     }
 }

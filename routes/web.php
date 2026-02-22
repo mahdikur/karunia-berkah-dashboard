@@ -44,6 +44,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/', [ReportController::class, 'index'])->name('index');
             Route::get('/monthly', [ReportController::class, 'monthly'])->name('monthly');
             Route::get('/profit-loss', [ReportController::class, 'profitLoss'])->name('profit-loss');
+            Route::get('/daily', [ReportController::class, 'daily'])->name('daily');
             Route::get('/client', [ReportController::class, 'clientReport'])->name('client');
         });
     });
@@ -56,6 +57,7 @@ Route::middleware('auth')->group(function () {
 
     // Purchase Orders
     Route::resource('purchase-orders', PurchaseOrderController::class);
+    Route::get('purchase-orders/{purchase_order}/print', [PurchaseOrderController::class, 'print'])->name('purchase-orders.print');
     Route::post('purchase-orders/{purchase_order}/approve', [PurchaseOrderController::class, 'approve'])->name('purchase-orders.approve')->middleware('role:superadmin');
     Route::post('purchase-orders/{purchase_order}/reject', [PurchaseOrderController::class, 'reject'])->name('purchase-orders.reject')->middleware('role:superadmin');
     Route::post('purchase-orders/{purchase_order}/cancel', [PurchaseOrderController::class, 'cancel'])->name('purchase-orders.cancel');

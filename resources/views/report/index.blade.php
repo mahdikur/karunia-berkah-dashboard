@@ -21,6 +21,15 @@
             </a>
         </div>
         <div class="col-md-4">
+            <a href="{{ route('reports.daily') }}" class="card text-decoration-none border-0" style="transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform='none'">
+                <div class="card-body text-center py-4">
+                    <div style="width:60px;height:60px;border-radius:14px;background:linear-gradient(135deg,#8b5cf6,#6d28d9);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;"><i class="bi bi-calendar-day text-white" style="font-size:28px;"></i></div>
+                    <h5 class="mb-1">Laporan Harian</h5>
+                    <p class="text-muted mb-0" style="font-size:13px;">Modal, HPP, dan laba harian</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-4">
             <a href="{{ route('reports.client') }}" class="card text-decoration-none border-0" style="transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform='none'">
                 <div class="card-body text-center py-4">
                     <div style="width:60px;height:60px;border-radius:14px;background:linear-gradient(135deg,#f59e0b,#d97706);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;"><i class="bi bi-person-badge text-white" style="font-size:28px;"></i></div>

@@ -13,7 +13,7 @@
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover mb-0">
-                    <thead class="table-dark"><tr><th>Bulan</th><th>Pendapatan</th><th>HPP</th><th>Laba Kotor</th><th>Pengeluaran</th><th>Laba Bersih</th></tr></thead>
+                    <thead class="table-dark"><tr><th class="text-white">Bulan</th><th class="text-white">Pendapatan</th><th class="text-white">HPP</th><th class="text-white">Laba Kotor</th><th class="text-white">Pengeluaran</th><th class="text-white">Laba Bersih</th></tr></thead>
                     <tbody>
                         @php $totals = ['revenue'=>0,'cogs'=>0,'gross_profit'=>0,'expenses'=>0,'net_profit'=>0]; @endphp
                         @foreach($monthlyData as $d)

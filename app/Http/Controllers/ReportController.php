@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Client;
 use App\Models\Expense;
 use App\Models\Invoice;
+use App\Models\ModalAllocation;
+use App\Models\Payment;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderItem;
 use Carbon\Carbon;
@@ -127,5 +129,71 @@ class ReportController extends Controller
         }
 
         return view('report.client', compact('clients', 'selectedClient', 'reportData'));
+    }
+
+    public function daily(Request $request)
+    {
+        $date = $request->date ? Carbon::parse($request->date)->format('Y-m-d') : now()->format('Y-m-d');
+        $displayDate = Carbon::parse($date)->format('d/m/Y');
+
+        // Revenue from Invoices created on this date
+        $revenue = Invoice::whereDate('created_at', $date)->sum('total_amount');
+
+        // COGS dari PO items yang di-invoice hari ini
+        $poIds = Invoice::whereDate('created_at', $date)->pluck('purchase_order_id');
+        $cogs = PurchaseOrderItem::whereIn('purchase_order_id', $poIds)
+            ->whereNotNull('purchase_price')
+            ->selectRaw('SUM(purchase_price * quantity) as total')
+            ->value('total') ?? 0;
+
+        $grossProfit = $revenue - $cogs;
+
+        // Modal yang dialokasikan hari ini
+        $totalModal = ModalAllocation::whereDate('created_at', $date)
+            ->selectRaw('SUM(allocated_amount) as total')
+            ->value('total') ?? 0;
+
+        // Pengeluaran hari ini
+        $totalExpenses = Expense::whereDate('expense_date', $date)->sum('amount');
+
+        // Kembalian Modal (pembayaran yang masuk hari ini)
+        $totalPayments = Payment::whereDate('payment_date', $date)->sum('amount');
+
+        $netProfit = $grossProfit - $totalExpenses;
+        $profitMargin = $revenue > 0 ? ($netProfit / $revenue * 100) : 0;
+
+        // Summary statistics
+        $stats = [
+            'modal' => $totalModal,
+            'pengeluaran' => $totalExpenses,
+            'kembalian_modal' => $totalPayments,
+            'revenue' => $revenue,
+            'hpp' => $cogs,
+            'laba_kotor' => $grossProfit,
+            'laba_bersih' => $netProfit,
+            'margin' => $profitMargin,
+        ];
+
+        // Breakdown per item (revenue/HPP)
+        $itemBreakdown = PurchaseOrderItem::whereIn('purchase_order_id', $poIds)
+            ->with('item')
+            ->get()
+            ->groupBy('item_id')
+            ->map(function ($items) {
+                $qty = $items->sum('quantity');
+                $totalHpp = $items->sum(fn($i) => $i->quantity * $i->purchase_price);
+                $totalRevenue = $items->sum(fn($i) => $i->quantity * $i->selling_price);
+                return [
+                    'item_name' => $items->first()->item->name,
+                    'qty' => $qty,
+                    'hpp_per_unit' => $items->first()->purchase_price,
+                    'total_hpp' => $totalHpp,
+                    'selling_price' => $items->first()->selling_price,
+                    'total_revenue' => $totalRevenue,
+                    'profit' => $totalRevenue - $totalHpp,
+                ];
+            })->values();
+
+        return view('report.daily', compact('date', 'displayDate', 'stats', 'itemBreakdown'));
     }
 }

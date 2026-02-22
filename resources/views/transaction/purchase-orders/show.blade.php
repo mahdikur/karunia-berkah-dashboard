@@ -7,6 +7,7 @@
         </div>
         <div class="d-flex gap-2">
             <a href="{{ route('purchase-orders.edit', $purchaseOrder) }}" class="btn btn-outline-warning"><i class="bi bi-pencil me-1"></i>Edit</a>
+            <a href="{{ route('purchase-orders.print', $purchaseOrder) }}" target="_blank" class="btn btn-outline-secondary"><i class="bi bi-printer me-1"></i>Print</a>
             @if($purchaseOrder->status === 'approved')
                 <a href="{{ route('delivery-notes.create', ['po_id' => $purchaseOrder->id]) }}" class="btn btn-outline-success"><i class="bi bi-truck me-1"></i>Buat Surat Jalan</a>
                 @if(!$purchaseOrder->invoice)

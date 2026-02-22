@@ -409,6 +409,12 @@ class PurchaseOrderController extends Controller
         ]);
     }
 
+    public function print(PurchaseOrder $purchaseOrder)
+    {
+        $purchaseOrder->load('client', 'creator', 'approver', 'items.item');
+        return view('transaction.purchase-orders.print', compact('purchaseOrder'));
+    }
+
     public function destroy(PurchaseOrder $purchaseOrder)
     {
         if (!in_array($purchaseOrder->status, ['draft'])) {

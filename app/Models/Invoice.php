@@ -56,6 +56,16 @@ class Invoice extends Model
         return $this->hasMany(Payment::class);
     }
 
+    public function batchItem()
+    {
+        return $this->hasOne(InvoiceBatchItem::class);
+    }
+
+    public function batch()
+    {
+        return $this->hasOneThrough(InvoiceBatch::class, InvoiceBatchItem::class, 'invoice_id', 'id', 'id', 'invoice_batch_id');
+    }
+
     public function getStatusBadgeAttribute()
     {
         return match($this->status) {

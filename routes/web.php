@@ -6,6 +6,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeliveryNoteController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\InvoiceBatchController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\ModalController;
 use App\Http\Controllers\PaymentController;
@@ -83,6 +84,12 @@ Route::middleware('auth')->group(function () {
     Route::resource('invoices', InvoiceController::class);
     Route::get('invoices/{invoice}/print', [InvoiceController::class, 'print'])->name('invoices.print');
     Route::post('invoices/{invoice}/regenerate', [InvoiceController::class, 'regenerate'])->name('invoices.regenerate');
+
+    // Invoice Batches
+    Route::get('invoice-batches/available-invoices', [InvoiceBatchController::class, 'getAvailableInvoices'])->name('invoice-batches.available-invoices');
+    Route::post('invoice-batches/{invoice_batch}/pay', [InvoiceBatchController::class, 'pay'])->name('invoice-batches.pay');
+    Route::get('invoice-batches/{invoice_batch}/print', [InvoiceBatchController::class, 'print'])->name('invoice-batches.print');
+    Route::resource('invoice-batches', InvoiceBatchController::class)->except(['edit', 'update']);
 
     // Payments
     Route::resource('payments', PaymentController::class)->except(['edit', 'update', 'show']);

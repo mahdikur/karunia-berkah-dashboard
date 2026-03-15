@@ -39,21 +39,24 @@
         </div>
     </div>
 
-    @push('scripts')
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        if (typeof $ !== 'undefined') {
-            $('#filterClient, #filterStatus').select2({ theme: 'bootstrap-5', width: '100%' });
-        }
-    });
-    </script>
-    @endpush
-
     <div class="card">
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover mb-0">
-                    <thead><tr><th width="50">#</th><th>No. PO</th><th>Client</th><th>Tgl PO</th><th>Status</th><th>Dibuat</th><th width="160">Aksi</th></tr></thead>
+                    <thead>
+                        <tr>
+                            <th width="40">#</th>
+                            <th>No. PO</th>
+                            <th>Client</th>
+                            <th>Tgl PO</th>
+                            <th>Status</th>
+                            <th class="text-center" width="90">Invoice</th>
+                            <th class="text-center" width="90">Surat Jalan</th>
+                            <th class="text-center" width="70">Retur</th>
+                            <th>Dibuat</th>
+                            <th width="100">Aksi</th>
+                        </tr>
+                    </thead>
                     <tbody>
                         @forelse($purchaseOrders as $po)
                             <tr>
@@ -62,18 +65,53 @@
                                 <td>{{ $po->client->name }}</td>
                                 <td>{{ $po->po_date->format('d/m/Y') }}</td>
                                 <td>{!! $po->status_badge !!}</td>
+
+                                {{-- Invoice --}}
+                                <td class="text-center">
+                                    @if($po->invoice_count > 0)
+                                        <a href="#" class="badge bg-success text-decoration-none"
+                                           data-bs-toggle="modal" data-bs-target="#modalInv{{ $po->id }}">
+                                            {{ $po->invoice_count }}x
+                                        </a>
+                                    @else
+                                        <span class="text-muted">-</span>
+                                    @endif
+                                </td>
+
+                                {{-- Surat Jalan --}}
+                                <td class="text-center">
+                                    @if($po->delivery_notes_count > 0)
+                                        <a href="#" class="badge bg-info text-decoration-none"
+                                           data-bs-toggle="modal" data-bs-target="#modalSJ{{ $po->id }}">
+                                            {{ $po->delivery_notes_count }}x
+                                        </a>
+                                    @else
+                                        <span class="text-muted">-</span>
+                                    @endif
+                                </td>
+
+                                {{-- Retur --}}
+                                <td class="text-center">
+                                    @if($po->return_notes_count > 0)
+                                        <a href="#" class="badge bg-danger text-decoration-none"
+                                           data-bs-toggle="modal" data-bs-target="#modalRtn{{ $po->id }}">
+                                            Yes
+                                        </a>
+                                    @else
+                                        <span class="badge bg-light text-secondary border" style="font-size:10px;">No</span>
+                                    @endif
+                                </td>
+
                                 <td>{{ $po->creator->name ?? '-' }}</td>
                                 <td>
                                     <div class="d-flex gap-1">
                                         <a href="{{ route('purchase-orders.show', $po) }}" class="btn btn-sm btn-outline-info" title="Detail"><i class="bi bi-eye"></i></a>
                                         <a href="{{ route('purchase-orders.edit', $po) }}" class="btn btn-sm btn-outline-warning" title="Edit"><i class="bi bi-pencil"></i></a>
-                                        <a href="{{ route('delivery-notes.index', ['search' => $po->po_number]) }}" class="btn btn-sm btn-outline-secondary" title="List Surat Jalan"><i class="bi bi-truck"></i></a>
-                                        <a href="{{ route('invoices.index', ['search' => $po->po_number]) }}" class="btn btn-sm btn-outline-success" title="List Invoice"><i class="bi bi-receipt"></i></a>
                                     </div>
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="7" class="text-center py-4 text-muted">Belum ada PO.</td></tr>
+                            <tr><td colspan="10" class="text-center py-4 text-muted">Belum ada PO.</td></tr>
                         @endforelse
                     </tbody>
                 </table>
@@ -83,4 +121,117 @@
             <div class="card-footer d-flex justify-content-center">{{ $purchaseOrders->withQueryString()->links('pagination::bootstrap-5') }}</div>
         @endif
     </div>
+
+    {{-- ===== MODALS (di luar tabel) ===== --}}
+    @foreach($purchaseOrders as $po)
+
+        {{-- Modal Invoice --}}
+        @if($po->invoice_count > 0)
+        <div class="modal fade" id="modalInv{{ $po->id }}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title"><i class="bi bi-receipt me-2"></i>Invoice – {{ $po->po_number }}</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body p-0">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr><th>No. Invoice</th><th>Tgl Invoice</th><th class="text-end">Total</th><th>Status</th><th></th></tr>
+                            </thead>
+                            <tbody>
+                                @if($po->invoice)
+                                <tr>
+                                    <td class="fw-semibold">{{ $po->invoice->invoice_number }}</td>
+                                    <td>{{ $po->invoice->invoice_date->format('d/m/Y') }}</td>
+                                    <td class="text-end">Rp {{ number_format($po->invoice->total_amount, 0, ',', '.') }}</td>
+                                    <td>{!! $po->invoice->status_badge !!}</td>
+                                    <td><a href="{{ route('invoices.show', $po->invoice) }}" class="btn btn-sm btn-outline-success"><i class="bi bi-eye"></i></a></td>
+                                </tr>
+                                @endif
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
+
+        {{-- Modal Surat Jalan --}}
+        @if($po->delivery_notes_count > 0)
+        <div class="modal fade" id="modalSJ{{ $po->id }}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header bg-info text-white">
+                        <h5 class="modal-title"><i class="bi bi-truck me-2"></i>Surat Jalan – {{ $po->po_number }}</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body p-0">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr><th>#</th><th>No. SJ</th><th>Tgl SJ</th><th>Tipe</th><th>Status</th><th></th></tr>
+                            </thead>
+                            <tbody>
+                                @foreach($po->deliveryNotes as $i => $dn)
+                                <tr>
+                                    <td>{{ $i + 1 }}</td>
+                                    <td class="fw-semibold">{{ $dn->dn_number }}</td>
+                                    <td>{{ $dn->dn_date->format('d/m/Y') }}</td>
+                                    <td><span class="badge bg-secondary">{{ ucfirst($dn->delivery_type) }}</span></td>
+                                    <td>{!! $dn->status_badge !!}</td>
+                                    <td><a href="{{ route('delivery-notes.show', $dn) }}" class="btn btn-sm btn-outline-info"><i class="bi bi-eye"></i></a></td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
+
+        {{-- Modal Retur --}}
+        @if($po->return_notes_count > 0)
+        <div class="modal fade" id="modalRtn{{ $po->id }}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title"><i class="bi bi-arrow-return-left me-2"></i>Retur – {{ $po->po_number }}</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body p-0">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr><th>#</th><th>No. Retur</th><th>Tgl Retur</th><th>Alasan</th><th>Status</th><th></th></tr>
+                            </thead>
+                            <tbody>
+                                @foreach($po->returnNotes as $i => $retur)
+                                <tr>
+                                    <td>{{ $i + 1 }}</td>
+                                    <td class="fw-semibold">{{ $retur->return_number }}</td>
+                                    <td>{{ $retur->return_date->format('d/m/Y') }}</td>
+                                    <td>{{ Str::limit($retur->reason, 40) }}</td>
+                                    <td>{!! $retur->status_badge !!}</td>
+                                    <td><a href="{{ route('return-notes.show', $retur) }}" class="btn btn-sm btn-outline-danger"><i class="bi bi-eye"></i></a></td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
+
+    @endforeach
+
+    @push('scripts')
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof $ !== 'undefined') {
+            $('#filterClient, #filterStatus').select2({ theme: 'bootstrap-5', width: '100%' });
+        }
+    });
+    </script>
+    @endpush
 </x-app-layout>

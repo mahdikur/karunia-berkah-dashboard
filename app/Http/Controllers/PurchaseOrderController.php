@@ -22,7 +22,9 @@ class PurchaseOrderController extends Controller
         $dateFrom = $request->date_from ?? now()->subWeek()->format('Y-m-d');
         $dateTo   = $request->date_to   ?? now()->format('Y-m-d');
 
-        $query = PurchaseOrder::with('client', 'creator')
+        $query = PurchaseOrder::with('client', 'creator', 'invoice', 'deliveryNotes', 'returnNotes')
+            ->withCount(['deliveryNotes', 'returnNotes'])
+            ->withCount(['invoice as invoice_count'])
             ->when($request->search, fn($q, $s) => $q->where('po_number', 'like', "%{$s}%"))
             ->when($request->status, fn($q, $s) => $q->where('status', $s))
             ->when($request->client_id, fn($q, $c) => $q->where('client_id', $c))
